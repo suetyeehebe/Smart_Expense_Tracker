@@ -25,56 +25,58 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 
 class LoginScreen {
     @Composable
-    fun LoginScreenFunction() {
-
+    fun LoginScreenFunction(navController: NavController) {
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var passwordVisible by remember { mutableStateOf(false) }
 
         Column(
-            modifier = Modifier.Companion
-                .fillMaxSize()
-                .padding(top = 208.dp),
-            horizontalAlignment = Alignment.Companion.CenterHorizontally
-        ) {
-
-            Text(
-                "App Name",
-                fontSize = 24.sp,
-                textAlign = TextAlign.Companion.Center,
-                fontWeight = FontWeight.Companion.Bold
-            )
-            Spacer(modifier = Modifier.Companion.height(8.dp))
-            Text("Welcome to App Name!")
-        }
-        Column(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Header
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = "App Name",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Welcome to App Name!")
 
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Title and subtitle
             Text(
                 "Sign in",
                 fontSize = 24.sp,
-                textAlign = TextAlign.Companion.Center,
-                fontWeight = FontWeight.Companion.Bold
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.Companion.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text("Stay updated on your financial expenses")
 
-            Spacer(modifier = Modifier.Companion.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
+            // Email input
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth())
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-
+            // Password input with toggle
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -91,30 +93,26 @@ class LoginScreen {
                 }
             )
 
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.Companion.height(16.dp))
-        }
-
-
-        Column (
-            modifier = Modifier.Companion
-            .fillMaxSize()
-            .padding(top = 324.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Companion.CenterHorizontally
-        ){
-            Button(onClick = { /* Handle login */ }) {
+            // Sign in button
+            Button(
+                onClick = { /* Handle login logic */ },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Sign in")
             }
-            Spacer(modifier = Modifier.Companion.height(8.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Navigation to signup
             Text(
-                "Don't have an account?",
-                modifier = Modifier.Companion.clickable {
-                    // Navigate to SignUpScreen()
-                },
-                color = Color.Companion.Blue
+                text = "Don't have an account?",
+                color = Color.Blue,
+                modifier = Modifier.clickable {
+                    navController.navigate("signup")
+                }
             )
         }
-
-        }
     }
+}

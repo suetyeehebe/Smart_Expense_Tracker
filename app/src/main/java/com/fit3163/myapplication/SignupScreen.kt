@@ -20,92 +20,97 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 
-class SignupScreen {
+class SignupScreen() {
     @Composable
-    fun SignupScreenFunction (){
+    fun SignupScreenFunction(navController: NavController) {
 
         var name by remember { mutableStateOf("") }
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
+        var passwordVisible by remember { mutableStateOf(false) }
 
         Column(
-            modifier = Modifier.Companion
-                .fillMaxSize()
-                .padding(top = 208.dp),
-            horizontalAlignment = Alignment.Companion.CenterHorizontally
-        ) {
-
-            Text(
-                "App Name",
-                fontSize = 24.sp,
-                textAlign = TextAlign.Companion.Center,
-                fontWeight = FontWeight.Companion.Bold
-            )
-            Spacer(modifier = Modifier.Companion.height(8.dp))
-            Text("Welcome to App Name!")
-        }
-        Column(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Header
+            Spacer(modifier = Modifier.height(40.dp))
+            Text("App Name", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Welcome to App Name!")
 
-            Text(
-                "Sign up",
-                fontSize = 24.sp,
-                textAlign = TextAlign.Companion.Center,
-                fontWeight = FontWeight.Companion.Bold
-            )
-            Spacer(modifier = Modifier.Companion.height(8.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Sign up title and description
+            Text("Sign up", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
             Text("Stay updated on your financial expenses")
 
-            Spacer(modifier = Modifier.Companion.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Input fields
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Name") },
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-            Column (
-                modifier = Modifier.Companion
-                    .fillMaxSize()
-                    .padding(top = 324.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.Companion.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.Companion.height(32.dp))
-                Button(onClick = { /* Handle login */ }) {
-                    Text("Sign up")
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val iconText = if (passwordVisible) "Hide" else "Show"
+                    Text(
+                        text = iconText,
+                        color = Color.Blue,
+                        modifier = Modifier.clickable { passwordVisible = !passwordVisible }
+                    )
                 }
+            )
 
-                Spacer(modifier = Modifier.Companion.height(8.dp))
-                Text(
-                    "Already have an account?",
-                    modifier = Modifier.Companion.clickable {
-                        // Navigate to SignUpScreen()
-                    },
-                    color = Color.Companion.Blue
-                )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Sign up button
+            Button(
+                onClick = { /* Handle sign up */ },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Sign up")
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Navigate to Login
+            Text(
+                text = "Already have an account?",
+                color = Color.Blue,
+                modifier = Modifier.clickable {
+                    navController.navigate("login")
+                }
+            )
         }
     }
+
+}
