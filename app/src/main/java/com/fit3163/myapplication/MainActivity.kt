@@ -14,27 +14,37 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-
+//            SettingScreen().MainSettingScreen()
 //            loginScreen.LoginScreenFunction()
             MyApp()
+
+        }
+    }
+
+    @Composable
+    fun MyApp() {
+        val navController = rememberNavController()
+        val loginScreen = LoginScreen()
+        val signupScreen = SignupScreen()
+        val settingScreen = SettingScreen()
+        val accountSettingScreen = AccountSettings()
+
+        NavHost(navController, startDestination = "main settings") {
+//            composable("login") {
+//                loginScreen.LoginScreenFunction(navController)
+//            }
+//            composable("signup") {
+//                signupScreen.SignupScreenFunction(navController)
+//            }
+            composable("main settings"){
+                settingScreen.MainSettingScreenFunction(navController)
+            }
+            composable("account settings"){
+                accountSettingScreen.AccountSettingScreenFunction(navController)
+            }
         }
     }
 }
 
-@Composable
-fun MyApp() {
-    val navController = rememberNavController()
-    val loginScreen = LoginScreen()
-    val signupScreen = SignupScreen()
-
-    NavHost(navController, startDestination = "login") {
-        composable("login") {
-            loginScreen.LoginScreenFunction(navController)
-        }
-        composable("signup") {
-            signupScreen.SignupScreenFunction(navController)
-        }
-    }
-}
 
 
