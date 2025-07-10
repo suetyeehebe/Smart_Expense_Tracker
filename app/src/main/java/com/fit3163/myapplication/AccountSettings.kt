@@ -18,7 +18,11 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults.colors
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -48,10 +52,58 @@ class AccountSettings {
         var name by remember { mutableStateOf("") }
         var checked by remember { mutableStateOf(true) }
 
-        Column (
+        Scaffold(
+            containerColor = Color.White,
+            bottomBar = {
+                NavigationBar(containerColor = Color.White) {
+
+                    NavigationBarItem(
+                        selected = true,
+                        onClick = { navController.navigate("main settings") },
+                        icon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.setting_icon),
+                                contentDescription = "Settings",
+                                modifier = Modifier.size(32.dp)
+                            )
+
+                        },
+                        label = { Text("Settings") },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = Color.White, // Set selected background to white
+                            selectedIconColor = Color.Black,
+                            selectedTextColor = Color.Black,
+                            unselectedIconColor = Color.Gray,
+                            unselectedTextColor = Color.Gray
+                        )
+                    )
+
+                    NavigationBarItem(
+                        selected = true,
+                        onClick = { navController.navigate("main settings") },
+                        icon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.appearance_icon2),
+                                contentDescription = "Settings",
+                                modifier = Modifier.size(32.dp)
+                            )
+
+                        },
+                        label = { Text("Account") },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = Color.White, // Set selected background to white
+                            selectedIconColor = Color.Black,
+                            selectedTextColor = Color.Black,
+                            unselectedIconColor = Color.Gray,
+                            unselectedTextColor = Color.Gray
+                        )
+                    )
+                }
+            }
+        ) { innerPadding ->Column (
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(innerPadding),
             verticalArrangement = Arrangement.Top
 
         ){
@@ -140,6 +192,7 @@ class AccountSettings {
 
 
 
+            }
         }
     }
 }
