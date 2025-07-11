@@ -11,25 +11,40 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.fit3163.myapplication.ui.theme.SmartExpenseTrackerTheme
+import com.fit3163.myapplication.ui.theme.ThemeMode
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-//            SettingScreen().MainSettingScreen()
-//            loginScreen.LoginScreenFunction()
-            MyApp()
+            // 🔹 Step 1: Keep track of theme mode
+            var selectedTheme by rememberSaveable { mutableStateOf(ThemeMode.SYSTEM) }
 
+            // 🔹 Step 2: Wrap entire app in the theme
+            SmartExpenseTrackerTheme(themeMode = selectedTheme) {
+                MyApp(
+                    currentTheme = selectedTheme,
+                    onThemeChanged = { selectedTheme = it }
+                )
+            }
         }
     }
 
     @Composable
-    fun MyApp() {
+    fun MyApp(
+        currentTheme: ThemeMode,
+        onThemeChanged: (ThemeMode) -> Unit
+    ) {
         val navController = rememberNavController()
         val loginScreen = LoginScreen()
         val signupScreen = SignupScreen()
@@ -43,16 +58,21 @@ class MainActivity : ComponentActivity() {
             composable("signup") {
                 signupScreen.SignupScreenFunction(navController)
             }
-            composable("main settings"){
-                settingScreen.MainSettingScreenFunction(navController)
+            composable("main settings") {
+                // 🔹 Step 3: Pass theme data to setting screen
+                settingScreen.MainSettingScreenFunction(
+                    navController = navController,
+                    currentTheme = currentTheme,
+                    onThemeChanged = onThemeChanged
+                )
             }
-            composable("account settings"){
+            composable("account settings") {
                 accountSettingScreen.AccountSettingScreenFunction(navController)
             }
-
         }
     }
 
+    // Optional: if you want to use this bottom nav bar later
     @Composable
     fun BottomNavBar(currentDestination: String, onSettingsClick: () -> Unit) {
         NavigationBar(containerColor = Color.White) {
@@ -66,6 +86,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 
 
 
