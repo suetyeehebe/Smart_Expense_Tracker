@@ -1,5 +1,6 @@
 package com.fit3163.myapplication
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -7,9 +8,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,10 +25,20 @@ class SettingScreen {
     @Composable
     fun MainSettingScreenFunction(
         navController: NavHostController,
+        authViewModel: AuthViewModel,
         currentTheme: ThemeMode,
         onThemeChanged: (ThemeMode) -> Unit
     ) {
         var showSheet by remember { mutableStateOf(false) }
+        val authState = authViewModel.authState.observeAsState()
+        val context = LocalContext.current
+
+        LaunchedEffect(authState.value) {
+            when (authState.value) {
+                is AuthState.Unauthenticated -> navController.navigate("login")
+                else -> Unit
+            }
+        }
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -134,7 +147,9 @@ class SettingScreen {
                     contentAlignment = Alignment.Center
                 ) {
                     OutlinedButton(
-                        onClick = { navController.navigate("login") },
+                        onClick = {
+                            authViewModel.signout()
+                                  },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),

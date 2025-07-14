@@ -15,7 +15,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -46,22 +49,25 @@ class MainActivity : ComponentActivity() {
         onThemeChanged: (ThemeMode) -> Unit
     ) {
         val navController = rememberNavController()
+        val authViewModel: AuthViewModel = viewModel() // Import androidx.lifecycle.viewmodel.compose.viewModel
+
         val loginScreen = LoginScreen()
         val signupScreen = SignupScreen()
         val settingScreen = SettingScreen()
         val accountSettingScreen = AccountSettings()
 
-        NavHost(navController, startDestination = "main settings") {
+        NavHost(navController, startDestination = "login") {
             composable("login") {
-                loginScreen.LoginScreenFunction(navController)
+                loginScreen.LoginScreenFunction(navController, authViewModel)
             }
             composable("signup") {
-                signupScreen.SignupScreenFunction(navController)
+                signupScreen.SignupScreenFunction(navController,authViewModel)
             }
             composable("main settings") {
                 // 🔹 Step 3: Pass theme data to setting screen
                 settingScreen.MainSettingScreenFunction(
                     navController = navController,
+                    authViewModel = authViewModel,
                     currentTheme = currentTheme,
                     onThemeChanged = onThemeChanged
                 )
