@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.fit3163.myapplication.ui.theme.ThemeMode
+import com.google.firebase.auth.FirebaseAuth
 
 class SettingScreen {
 
@@ -32,6 +33,8 @@ class SettingScreen {
         var showSheet by remember { mutableStateOf(false) }
         val authState = authViewModel.authState.observeAsState()
         val context = LocalContext.current
+        val name = FirebaseAuth.getInstance().currentUser?.displayName
+
 
         LaunchedEffect(authState.value) {
             when (authState.value) {

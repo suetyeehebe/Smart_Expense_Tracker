@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -89,7 +90,8 @@ class LoginScreen {
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -107,7 +109,8 @@ class LoginScreen {
                         color = Color.Blue,
                         modifier = Modifier.clickable { passwordVisible = !passwordVisible }
                     )
-                }
+                },
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(24.dp))

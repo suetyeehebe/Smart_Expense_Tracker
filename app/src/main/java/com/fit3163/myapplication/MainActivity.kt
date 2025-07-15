@@ -55,8 +55,9 @@ class MainActivity : ComponentActivity() {
         val signupScreen = SignupScreen()
         val settingScreen = SettingScreen()
         val accountSettingScreen = AccountSettings()
+        val analyticScreen = AnalyticScreen()
 
-        NavHost(navController, startDestination = "login") {
+        NavHost(navController, startDestination = "analytics") {
             composable("login") {
                 loginScreen.LoginScreenFunction(navController, authViewModel)
             }
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
                 signupScreen.SignupScreenFunction(navController,authViewModel)
             }
             composable("main settings") {
-                // 🔹 Step 3: Pass theme data to setting screen
+
                 settingScreen.MainSettingScreenFunction(
                     navController = navController,
                     authViewModel = authViewModel,
@@ -72,8 +73,18 @@ class MainActivity : ComponentActivity() {
                     onThemeChanged = onThemeChanged
                 )
             }
+
             composable("account settings") {
                 accountSettingScreen.AccountSettingScreenFunction(navController)
+            }
+
+            composable("analytics") {
+                analyticScreen.AnalyticScreenFunction(
+                    navController = navController,
+                    authViewModel = authViewModel,
+                    currentTheme = currentTheme,
+                    onThemeChanged = onThemeChanged
+                )
             }
         }
     }

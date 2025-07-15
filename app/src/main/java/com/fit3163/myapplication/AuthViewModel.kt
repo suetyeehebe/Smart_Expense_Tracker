@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.userProfileChangeRequest
 
 class AuthViewModel : ViewModel(){
     private val auth : FirebaseAuth = FirebaseAuth.getInstance()
@@ -37,19 +38,20 @@ class AuthViewModel : ViewModel(){
                     _authState.value = AuthState.Authenticated
 
                 }else{
-                    _authState.value = AuthState.Error(task.exception?.message?:"Something went wrong")
+//                    _authState.value = AuthState.Error(task.exception?.message?:"Something went wrong")
+                    _authState.value = AuthState.Error("Wrong account/password")
+
                 }
             }
     }
 
-    fun signup(name : String, email : String, password : String){
-
-        if(name.isEmpty()){
+    fun signup(name: String, email: String, password: String) {
+        if (name.isEmpty()) {
             _authState.value = AuthState.Error("Name can't be empty")
             return
         }
 
-        if(email.isEmpty() || password.isEmpty()){
+        if (email.isEmpty() || password.isEmpty()) {
             _authState.value = AuthState.Error("Email / Password can't be empty")
             return
         }
@@ -58,14 +60,28 @@ class AuthViewModel : ViewModel(){
 
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful){
-                    _authState.value = AuthState.Authenticated
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    val profileUpdates = userProfileChangeRequest {
+                        displayName = name
+                    }
 
-                }else{
-                    _authState.value = AuthState.Error(task.exception?.message?:"Something went wrong")
+                    user?.updateProfile(profileUpdates)
+                        ?.addOnCompleteListener { updateTask ->
+                            if (updateTask.isSuccessful) {
+                                _authState.value = AuthState.SignupSuccess
+                            } else {
+                                _authState.value = AuthState.Error(updateTask.exception?.message ?: "Failed to update profile")
+                            }
+                        }
+                } else {
+                    _authState.value = AuthState.Error(task.exception?.message ?: "Something went wrong")
                 }
             }
     }
+
+
+
 
     fun signout(){
         auth.signOut()
@@ -74,10 +90,10 @@ class AuthViewModel : ViewModel(){
 
 }
 
-sealed class AuthState{
+sealed class AuthState {
     object Authenticated : AuthState()
     object Unauthenticated : AuthState()
     object Loading : AuthState()
-    data class Error(val message : String ) : AuthState()
-
+    object SignupSuccess : AuthState()
+    data class Error(val message: String) : AuthState()
 }

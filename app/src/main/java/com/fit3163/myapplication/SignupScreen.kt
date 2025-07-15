@@ -34,7 +34,7 @@ import androidx.compose.runtime.livedata.observeAsState
 
 class SignupScreen() {
     @Composable
-    fun SignupScreenFunction( navController: NavController, authViewModel: AuthViewModel) {
+    fun SignupScreenFunction(navController: NavController, authViewModel: AuthViewModel) {
 
         var name by remember { mutableStateOf("") }
         var email by remember { mutableStateOf("") }
@@ -46,12 +46,18 @@ class SignupScreen() {
 
         LaunchedEffect(authState.value) {
             when (authState.value) {
-                is AuthState.Authenticated -> navController.navigate("login ")
-                is AuthState.Error -> Toast.makeText(
-                    context,
-                    (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
-                ).show()
-
+                is AuthState.SignupSuccess -> {
+                    Toast.makeText(context, "Signup successful!", Toast.LENGTH_SHORT).show()
+                    navController.navigate("login")
+                    authViewModel.signout() // reset to Unauthenticated cleanly
+                }
+                is AuthState.Error -> {
+                    Toast.makeText(
+                        context,
+                        (authState.value as AuthState.Error).message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
                 else -> Unit
             }
         }
@@ -63,36 +69,36 @@ class SignupScreen() {
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
             Spacer(modifier = Modifier.height(40.dp))
             Text("App Name", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             Text("Welcome to App Name!")
 
             Spacer(modifier = Modifier.height(32.dp))
-
-            // Sign up title and description
             Text("Sign up", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             Text("Stay updated on your financial expenses")
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Input fields
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -106,15 +112,15 @@ class SignupScreen() {
                         color = Color.Blue,
                         modifier = Modifier.clickable { passwordVisible = !passwordVisible }
                     )
-                }
+                },
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Sign up button
             Button(
                 onClick = {
-                    authViewModel.signup(name,email,password)
+                    authViewModel.signup(name, email, password)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -123,7 +129,6 @@ class SignupScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Navigate to Login
             Text(
                 text = "Already have an account?",
                 color = Color.Blue,
@@ -133,5 +138,4 @@ class SignupScreen() {
             )
         }
     }
-
 }
