@@ -21,163 +21,117 @@ import androidx.navigation.NavHostController
 import com.fit3163.myapplication.ui.theme.ThemeMode
 import com.google.firebase.auth.FirebaseAuth
 
-class SettingScreen {
-
-    @Composable
-    fun MainSettingScreenFunction(
-        navController: NavHostController,
-        authViewModel: AuthViewModel,
-        currentTheme: ThemeMode,
-        onThemeChanged: (ThemeMode) -> Unit
-    ) {
-        var showSheet by remember { mutableStateOf(false) }
-        val authState = authViewModel.authState.observeAsState()
-        val context = LocalContext.current
-        val name = FirebaseAuth.getInstance().currentUser?.displayName
+@Composable
+fun SettingScreen(
+    navController: NavHostController,
+    authViewModel: AuthViewModel,
+    currentTheme: ThemeMode,
+    onThemeChanged: (ThemeMode) -> Unit
+) {
+    var showSheet by remember { mutableStateOf(false) }
+    val authState = authViewModel.authState.observeAsState()
+    val context = LocalContext.current
+    val name = FirebaseAuth.getInstance().currentUser?.displayName
 
 
-        LaunchedEffect(authState.value) {
-            when (authState.value) {
-                is AuthState.Unauthenticated -> navController.navigate("login")
-                else -> Unit
-            }
+    LaunchedEffect(authState.value) {
+        when (authState.value) {
+            is AuthState.Unauthenticated -> navController.navigate("login")
+            else -> Unit
         }
+    }
 
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
-                    NavigationBarItem(
-                        selected = true,
-                        onClick = { navController.navigate("main settings") },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.setting_icon),
-                                contentDescription = "Settings",
-                                modifier = Modifier.size(32.dp)
-                            )
-                        },
-                        label = { Text("Settings") },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.White,
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = Color.Black,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
-                        )
-                    )
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(40.dp))
+            Text("Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(40.dp))
 
-                    NavigationBarItem(
-                        selected = true,
-                        onClick = { navController.navigate("main settings") },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.appearance_icon2),
-                                contentDescription = "Account",
-                                modifier = Modifier.size(32.dp)
-                            )
-                        },
-                        label = { Text("Account") },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.White,
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = Color.Black,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
-                        )
-                    )
-                }
-            }
-        ) { innerPadding ->
-            Column(
+            // Account Settings Row
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Top
+                    .fillMaxWidth()
+                    .clickable { navController.navigate("account settings") }
             ) {
-                Spacer(modifier = Modifier.height(40.dp))
-                Text("Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(40.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.person_icon2),
+                    contentDescription = "Account Icon",
+                    modifier = Modifier.size(25.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text("Account Settings", fontSize = 24.sp, modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null
+                )
+            }
 
-                // Account Settings Row
-                Row(
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // Appearance Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showSheet = true }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.appearance_icon2),
+                    contentDescription = "Appearance Icon",
+                    modifier = Modifier.size(25.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text("Appearance", fontSize = 24.sp, modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null
+                )
+            }
+
+            Spacer(modifier = Modifier.height(60.dp))
+
+            // Logout Button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        authViewModel.signout()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { navController.navigate("account settings") }
+                        .height(50.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.Black
+                    )
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.person_icon2),
-                        contentDescription = "Account Icon",
-                        modifier = Modifier.size(25.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text("Account Settings", fontSize = 24.sp, modifier = Modifier.weight(1f))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(40.dp))
-
-                // Appearance Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showSheet = true }
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.appearance_icon2),
-                        contentDescription = "Appearance Icon",
-                        modifier = Modifier.size(25.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text("Appearance", fontSize = 24.sp, modifier = Modifier.weight(1f))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(60.dp))
-
-                // Logout Button
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    OutlinedButton(
-                        onClick = {
-                            authViewModel.signout()
-                                  },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color.Black
-                        )
-                    ) {
-                        Text("Logout", fontSize = 16.sp)
-                    }
+                    Text("Logout", fontSize = 16.sp)
                 }
             }
         }
+    }
 
-        // Bottom Sheet for Theme Selection
-        if (showSheet) {
-            AppearanceBottomSheet(
-                selectedTheme = currentTheme,
-                onDismiss = { showSheet = false },
-                onThemeSelected = {
-                    onThemeChanged(it)
-                    showSheet = false
-                }
-            )
-        }
+    // Bottom Sheet for Theme Selection
+    if (showSheet) {
+        AppearanceBottomSheet(
+            selectedTheme = currentTheme,
+            onDismiss = { showSheet = false },
+            onThemeSelected = {
+                onThemeChanged(it)
+                showSheet = false
+            }
+        )
     }
 }
 

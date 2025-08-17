@@ -71,5 +71,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth:23.2.1")
     implementation("androidx.compose.runtime:runtime-livedata")
+    implementation(libs.androidx.material.icons.extended)
 
 }

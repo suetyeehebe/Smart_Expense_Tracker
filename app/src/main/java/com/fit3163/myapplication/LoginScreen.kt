@@ -33,108 +33,106 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 
-class LoginScreen {
-    @Composable
-    fun LoginScreenFunction(navController: NavController, authViewModel: AuthViewModel) {
-        var email by remember { mutableStateOf("") }
-        var password by remember { mutableStateOf("") }
-        var passwordVisible by remember { mutableStateOf(false) }
-        val authState = authViewModel.authState.observeAsState()
-        val context = LocalContext.current
+@Composable
+fun LoginScreenFunction(navController: NavController, authViewModel: AuthViewModel) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    val authState = authViewModel.authState.observeAsState()
+    val context = LocalContext.current
 
-        LaunchedEffect(authState.value) {
-            when (authState.value) {
-                is AuthState.Authenticated -> navController.navigate("main settings")
-                is AuthState.Error -> Toast.makeText(
-                    context,
-                    (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
-                ).show()
+    LaunchedEffect(authState.value) {
+        when (authState.value) {
+            is AuthState.Authenticated -> navController.navigate("Analytics")
+            is AuthState.Error -> Toast.makeText(
+                context,
+                (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
+            ).show()
 
-                else -> Unit
-            }
+            else -> Unit
         }
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Header
+        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = "App Name",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Welcome to App Name!")
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Title and subtitle
+        Text(
+            "Sign in",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Stay updated on your financial expenses")
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Email input
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Password input with toggle
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                val iconText = if (passwordVisible) "Hide" else "Show"
+                Text(
+                    text = iconText,
+                    color = Color.Blue,
+                    modifier = Modifier.clickable { passwordVisible = !passwordVisible }
+                )
+            },
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Sign in button
+        Button(
+            onClick = {
+                authViewModel.login(email,password)
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Header
-            Spacer(modifier = Modifier.height(32.dp))
-            Text(
-                text = "App Name",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Welcome to App Name!")
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Title and subtitle
-            Text(
-                "Sign in",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Stay updated on your financial expenses")
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Email input
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Password input with toggle
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    val iconText = if (passwordVisible) "Hide" else "Show"
-                    Text(
-                        text = iconText,
-                        color = Color.Blue,
-                        modifier = Modifier.clickable { passwordVisible = !passwordVisible }
-                    )
-                },
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Sign in button
-            Button(
-                onClick = {
-                    authViewModel.login(email,password)
-                          },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Sign in")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Navigation to signup
-            Text(
-                text = "Don't have an account?",
-                color = Color.Blue,
-                modifier = Modifier.clickable {
-                    navController.navigate("signup")
-                }
-            )
+            Text("Sign in")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Navigation to signup
+        Text(
+            text = "Don't have an account?",
+            color = Color.Blue,
+            modifier = Modifier.clickable {
+                navController.navigate("signup")
+            }
+        )
     }
 }

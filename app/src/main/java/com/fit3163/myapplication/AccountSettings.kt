@@ -43,157 +43,100 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-//import java.lang.reflect.Modifier
 
-class AccountSettings {
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun AccountSettingScreenFunction(navController: NavHostController){
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AccountSettingScreen(navController: NavHostController){
 
-        var name by remember { mutableStateOf("") }
-        var checked by remember { mutableStateOf(true) }
+    var name by remember { mutableStateOf("") }
+    var checked by remember { mutableStateOf(true) }
 
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->Column (
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding),
+        verticalArrangement = Arrangement.Top
 
-                    NavigationBarItem(
-                        selected = true,
-                        onClick = { navController.navigate("main settings") },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.setting_icon),
-                                contentDescription = "Settings",
-                                modifier = Modifier.size(32.dp)
-                            )
+    ){
+        Spacer(modifier = Modifier.height(40.dp))
 
-                        },
-                        label = { Text("Settings") },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.White, // Set selected background to white
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = Color.Black,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
-                        )
-                    )
-
-                    NavigationBarItem(
-                        selected = true,
-                        onClick = { navController.navigate("main settings") },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.appearance_icon2),
-                                contentDescription = "Settings",
-                                modifier = Modifier.size(32.dp)
-                            )
-
-                        },
-                        label = { Text("Account") },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.White, // Set selected background to white
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = Color.Black,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
-                        )
-                    )
-                }
-            }
-        ) { innerPadding ->Column (
+        Row (
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            verticalArrangement = Arrangement.Top
-
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ){
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Row (
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
                 modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    modifier = Modifier
-                        .clickable{navController.navigate("main settings")}
+                    .clickable{navController.navigate("Settings")}
 
-                )
-                Spacer(modifier = Modifier.width(38.dp))
-                Text("Account Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            )
+            Spacer(modifier = Modifier.width(38.dp))
+            Text("Account Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
 
-            }
-
-            Text("qmah0001@student.monash.edu",fontSize = 24.sp,
-                modifier = Modifier.
-                align(Alignment.CenterHorizontally))
-
-            Spacer(modifier = Modifier.height(40.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Icon(
-                    painter = painterResource(id = R.drawable.person_icon2),
-                    contentDescription = "Account Icon",
-                    modifier = Modifier.size(48.dp)
-                )
-
-                TextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = {
-                        Text("Name", fontSize = 24.sp) },
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Color.Transparent, // No background
-                        unfocusedIndicatorColor = Color.Gray, // Underline color
-                        focusedIndicatorColor = Color.Black,
-                        disabledIndicatorColor = Color.LightGray
-                    ),
-                    singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 24.sp)
-                )
-
-            }
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Icon(
-                    painter = painterResource(id = R.drawable.notification_icon2),
-                    contentDescription = "Notification Icon",
-                    modifier = Modifier.size(48.dp)
-                )
-                Spacer(modifier = Modifier.width(20.dp))
-                Text("Notifications", fontSize = 24.sp)
-                Spacer(modifier = Modifier.width(100.dp))
-                Switch(
-                    checked = checked,
-                    onCheckedChange = { isChecked ->
-                        checked = isChecked
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-
-
-
-
-
-
-
-
-            }
         }
+
+        Text("qmah0001@student.monash.edu",fontSize = 24.sp,
+            modifier = Modifier.
+            align(Alignment.CenterHorizontally))
+
+        Spacer(modifier = Modifier.height(40.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Icon(
+                painter = painterResource(id = R.drawable.person_icon2),
+                contentDescription = "Account Icon",
+                modifier = Modifier.size(48.dp)
+            )
+
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                label = {
+                    Text("Name", fontSize = 24.sp) },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                colors = TextFieldDefaults.textFieldColors(
+                    containerColor = Color.Transparent, // No background
+                    unfocusedIndicatorColor = Color.Gray, // Underline color
+                    focusedIndicatorColor = Color.Black,
+                    disabledIndicatorColor = Color.LightGray
+                ),
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 24.sp)
+            )
+
+        }
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Icon(
+                painter = painterResource(id = R.drawable.notification_icon2),
+                contentDescription = "Notification Icon",
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.width(20.dp))
+            Text("Notifications", fontSize = 24.sp)
+            Spacer(modifier = Modifier.width(100.dp))
+            Switch(
+                checked = checked,
+                onCheckedChange = { isChecked ->
+                    checked = isChecked
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+    }
     }
 }
