@@ -2,6 +2,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Camera permission -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Declare camera as optional (so app installs on devices without camera) -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <!-- On Android 10+ (Scoped Storage), you usually don’t need WRITE/READ external storage
+         because you're saving to getExternalFilesDir(). If you don't access shared storage,
+         you can safely remove these. -->
+    <!--
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    -->
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,10 +29,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SmartExpenseTracker"
         tools:targetApi="31">
+
+        <!-- Login Activity -->
         <activity
             android:name=".ui.login.LoginActivity"
             android:exported="false"
             android:label="@string/title_activity_login" />
+
+        <!-- Main Activity (Launcher) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -23,10 +44,21 @@
             android:theme="@style/Theme.SmartExpenseTracker">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- FileProvider for saving images -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

@@ -72,5 +72,8 @@ dependencies {
     implementation("com.google.firebase:firebase-auth:23.2.1")
     implementation("androidx.compose.runtime:runtime-livedata")
     implementation(libs.androidx.material.icons.extended)
+    implementation("com.google.mlkit:face-detection:16.0.0")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:16.0.0")
 
 }
