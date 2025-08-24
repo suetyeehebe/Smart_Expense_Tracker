@@ -78,7 +78,7 @@ fun MyNavHost(
 
         composable("Budgets"){
             // onSelectedChange("Budgets")
-
+            BudgetScreen()
         }
     }
 }
