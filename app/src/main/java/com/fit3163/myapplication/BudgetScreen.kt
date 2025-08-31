@@ -251,7 +251,6 @@
 //    )
 //}
 
-
 package com.fit3163.myapplication
 
 import androidx.compose.foundation.clickable
@@ -278,6 +277,7 @@ import androidx.compose.ui.window.DialogProperties
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
 import com.fit3163.myapplication.data.budgets.Budget
 
 @Preview(showBackground = true)
@@ -307,6 +307,7 @@ fun BudgetScreen() {
         topBar = {
             Text(
                 text = "Budgets",
+                fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -322,6 +323,7 @@ fun BudgetScreen() {
         LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
+                .padding(16.dp)
                 .fillMaxSize()
         ) {
             itemsIndexed(budgets) { index, budget ->

@@ -142,7 +142,7 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
     val sheetState = rememberModalBottomSheetState()
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
-    val cameraHelper = remember { CameraHelper(activity) }
+    val cameraHelper = remember(activity) { CameraHelper(activity) }
     val taggunOcrHelper = remember { TaggunOcrHelper() }
     var scannedJson by remember { mutableStateOf("") }
 
