@@ -75,18 +75,18 @@ fun AnalyticsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-//                .padding(innerPadding)
             .padding(24.dp),
         verticalArrangement = Arrangement.Top
     ) {
         Row(){
-            Spacer(modifier = Modifier.height(40.dp))
+            //Spacer(modifier = Modifier.height(40.dp))
             Text(
                 text = "Analytics",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
+
         }
 
     }

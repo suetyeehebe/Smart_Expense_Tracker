@@ -68,10 +68,11 @@ class MainActivity : ComponentActivity() {
             val navController: NavHostController = rememberNavController()
             var selected by remember { mutableStateOf("") }
             val authViewModel: AuthViewModel = viewModel()
+            val bottomNavRoutes = listOf("Analytics", "Expenses", "Budgets", "Settings")
 
             // 🔹 Step 2: Wrap entire app in the theme
             SmartExpenseTrackerTheme(themeMode = selectedTheme) {
-                Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = { if(selected != "login" && selected != "signup") {
+                Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = { if(selected in bottomNavRoutes) {
                     BottomNavBar(navController, selected)
                 } }) { innerPadding ->
                     Column( modifier = Modifier.padding(innerPadding) ) {

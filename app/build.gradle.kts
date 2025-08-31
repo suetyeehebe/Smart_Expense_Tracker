@@ -51,7 +51,6 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-//    implementation(libs.androidx.navigation.compose.jvmstubs)
     implementation("androidx.navigation:navigation-compose:2.7.5")
     implementation(libs.firebase.auth)
     implementation(libs.androidx.appcompat)

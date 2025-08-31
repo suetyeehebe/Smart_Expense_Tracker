@@ -51,7 +51,7 @@ fun SettingScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
+            //Spacer(modifier = Modifier.height(40.dp))
             Text("Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(40.dp))
 
