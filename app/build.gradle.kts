@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.fit3163.myapplication"
-        minSdk = 34
+        minSdk = 29
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -42,7 +42,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -52,13 +51,33 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation("androidx.navigation:navigation-compose:2.7.5")
-    implementation(libs.firebase.auth)
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth:23.2.1")
+    implementation("com.google.firebase:firebase-firestore-ktx:25.1.1")
+    implementation("com.google.firebase:firebase-storage:20.3.0")
+
+    // AndroidX & Material
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation("androidx.compose.runtime:runtime-livedata")
+    implementation(libs.androidx.material.icons.extended)
+
+    // ML Kit
+    implementation("com.google.mlkit:face-detection:16.0.0")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:16.0.0")
+
+    // Networking
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -66,10 +85,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth:23.2.1")
-    implementation("androidx.compose.runtime:runtime-livedata")
-    implementation(libs.androidx.material.icons.extended)
-
 }
