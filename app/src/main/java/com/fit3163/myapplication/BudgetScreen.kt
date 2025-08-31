@@ -254,7 +254,6 @@
 
 package com.fit3163.myapplication
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -279,6 +278,7 @@ import androidx.compose.ui.window.DialogProperties
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
+import com.fit3163.myapplication.data.budgets.Budget
 
 @Preview(showBackground = true)
 @Composable

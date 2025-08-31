@@ -1,12 +1,20 @@
 package com.fit3163.myapplication
 
 import android.app.Activity
+import android.content.Context
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -46,6 +54,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -56,7 +65,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.fit3163.myapplication.ui.theme.SmartExpenseTrackerTheme
 import com.fit3163.myapplication.ui.theme.ThemeMode
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.selects.select
+import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,7 +83,6 @@ class MainActivity : ComponentActivity() {
             val authViewModel: AuthViewModel = viewModel()
             val bottomNavRoutes = listOf("Analytics", "Expenses", "Budgets", "Settings")
 
-            // 🔹 Step 2: Wrap entire app in the theme
             SmartExpenseTrackerTheme(themeMode = selectedTheme) {
                 Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = { if(selected in bottomNavRoutes) {
                     BottomNavBar(navController, selected)
@@ -79,13 +91,8 @@ class MainActivity : ComponentActivity() {
                         MyNavHost(selectedTheme, { selectedTheme=it }, navController, {selected = it})
                     }
                 }
-//                MyApp(
-//                    currentTheme = selectedTheme,
-//                    onThemeChanged = { selectedTheme = it },
-//                    navController,
-//                    onSelectedChange = {selected = it}
-//                )
             }
         }
     }
 }
+
