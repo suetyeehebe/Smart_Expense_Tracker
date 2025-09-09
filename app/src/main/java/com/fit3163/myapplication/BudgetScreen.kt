@@ -406,6 +406,7 @@ fun BudgetItem(
     }
 
     Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
@@ -419,14 +420,15 @@ fun BudgetItem(
             ) {
                 Text(
                     budget.category,
+                    fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
 
                 Text(
                     budget.type,
+                    fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
                 )
 
                 // Warning icon for budgets close to or over limit
@@ -448,7 +450,7 @@ fun BudgetItem(
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
+                    .height(32.dp)
                     .padding(top = 4.dp)
             )
 

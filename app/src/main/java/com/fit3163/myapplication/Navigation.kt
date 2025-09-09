@@ -105,9 +105,7 @@ fun MyNavHost(
             //onSelectedChange("Analytics")
             AnalyticsScreen(
                 navController = navController,
-                authViewModel = authViewModel,
-                currentTheme = currentTheme,
-                onThemeChanged = onThemeChanged
+                expensesVm = expensesViewModel
             )
         }
 

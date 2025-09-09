@@ -40,6 +40,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -117,7 +118,7 @@ fun ExpensesScreen(navController: NavHostController, expensesViewModel: Expenses
         )
     )
 
-    var expanded by remember { mutableStateOf(false) }
+    //var expanded by remember { mutableStateOf(false) }
     var expenses = sampleExpenses
     var selectedMonth by remember { mutableStateOf(YearMonth.of(2025, 8)) }
     // Filter expenses for the selected month
@@ -133,7 +134,7 @@ fun ExpensesScreen(navController: NavHostController, expensesViewModel: Expenses
     Column(modifier = Modifier.padding(16.dp)) {
 
         Row(){
-            Text("Expenses", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+            Text("Expenses", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium, fontSize = 24.sp)
 
 //            ExposedDropdownMenuBox(
 //                expanded = expanded,
@@ -167,7 +168,7 @@ fun ExpensesScreen(navController: NavHostController, expensesViewModel: Expenses
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
 //            IconButton(onClick = { selectedMonth = selectedMonth.minusMonths(1) }) {
 //                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous Month")
 //            }
@@ -371,7 +372,7 @@ fun ExpenseDetailScreen(navController: NavHostController, expensesViewModel: Exp
 
 
             // Date picker
-            val context = LocalContext.current
+            //val context = LocalContext.current
             //val datePickerDialog = DatePickerFun(date)
 
             // Date (opens DatePickerDialog)

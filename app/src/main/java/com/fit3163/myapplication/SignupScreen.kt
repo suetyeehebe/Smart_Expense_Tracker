@@ -98,9 +98,9 @@ fun SignupScreenFunction(navController: NavController, authViewModel: AuthViewMo
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(40.dp))
-        Text("App Name", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text("Smart Expense Tracker", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Welcome to App Name!")
+        Text("Welcome to Smart Expense Tracker!")
 
         Spacer(modifier = Modifier.height(32.dp))
         Text("Sign up", fontSize = 24.sp, fontWeight = FontWeight.Bold)

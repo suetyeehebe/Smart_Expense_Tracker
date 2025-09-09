@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
@@ -20,6 +21,7 @@ class ExpensesViewModel : ViewModel() {
     val expenses_list = seed()
     // pretend repository feed
     private val all = MutableStateFlow(expenses_list)
+    val allItems: StateFlow<List<Expense>> = all.asStateFlow()
 
     private val month = MutableStateFlow(YearMonth.now())
 
