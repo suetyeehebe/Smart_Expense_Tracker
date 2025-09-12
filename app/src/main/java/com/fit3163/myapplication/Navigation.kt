@@ -128,7 +128,7 @@ fun MyNavHost(
 
         composable("Budgets"){
             // onSelectedChange("Budgets")
-            BudgetScreen()
+            BudgetScreen(expensesViewModel = expensesViewModel) // added this for reflecting changes
         }
     }
 }
