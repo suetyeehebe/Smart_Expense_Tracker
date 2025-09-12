@@ -467,7 +467,7 @@ fun AnalyticsScreen(
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                 IconButton(onClick = { analyticsVm.prev() }) { Icon(Icons.Default.ChevronLeft, null) }
-                Text(ui.periodLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(ui.periodLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
                 IconButton(onClick = { analyticsVm.next() }) { Icon(Icons.Default.ChevronRight, null) }
             }
         }
@@ -578,6 +578,11 @@ private fun GranularityDropdown(selected: TimeGranularity, onChange: (TimeGranul
             xAxis.valueFormatter = object : ValueFormatter() {
                 override fun getFormattedValue(value: Float): String = labels.getOrNull(value.toInt()) ?: ""
             }
+
+            setTouchEnabled(false)
+            isDragEnabled = false
+            setScaleEnabled(false)
+
             legend.isEnabled = false
             this.data = data
             invalidate()
@@ -612,7 +617,7 @@ private fun GranularityDropdown(selected: TimeGranularity, onChange: (TimeGranul
             sliceSpace = 2f
             valueTextSize = 12f
             valueTypeface = Typeface.DEFAULT_BOLD
-            setDrawValues(false)
+            //setDrawValues(false)
             colors = categoryColors
             // leave MP default colors or inject your palette
         }
@@ -627,7 +632,7 @@ private fun GranularityDropdown(selected: TimeGranularity, onChange: (TimeGranul
             isDrawHoleEnabled = true
             setUsePercentValues(false)
             setDrawEntryLabels(false)
-//
+
             legend.apply {
                 isEnabled = true
                 //isWordWrapEnabled = true
@@ -639,6 +644,7 @@ private fun GranularityDropdown(selected: TimeGranularity, onChange: (TimeGranul
 //                yEntrySpace = 6f
             }
 
+            setTouchEnabled(false)
             isRotationEnabled = false
             this.data = data
             invalidate()

@@ -134,7 +134,7 @@ fun ExpensesScreen(navController: NavHostController, expensesViewModel: Expenses
     Column(modifier = Modifier.padding(16.dp)) {
 
         Row(){
-            Text("Expenses", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium, fontSize = 24.sp)
+            Text("Expenses", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
 
 //            ExposedDropdownMenuBox(
 //                expanded = expanded,
@@ -166,7 +166,7 @@ fun ExpensesScreen(navController: NavHostController, expensesViewModel: Expenses
 //            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
 //            IconButton(onClick = { selectedMonth = selectedMonth.minusMonths(1) }) {
