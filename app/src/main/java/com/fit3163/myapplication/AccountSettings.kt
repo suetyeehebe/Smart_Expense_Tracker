@@ -60,8 +60,6 @@ fun AccountSettingScreen(navController: NavHostController){
         verticalArrangement = Arrangement.Top
 
     ){
-        Spacer(modifier = Modifier.height(40.dp))
-
         Row (
             modifier = Modifier
                 .fillMaxWidth(),

@@ -62,13 +62,13 @@ fun LoginScreenFunction(navController: NavController, authViewModel: AuthViewMod
         // Header
         Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = "App Name",
+            text = "Smart Expense Tracker",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Welcome to App Name!")
+        Text("Welcome to Smart Expense Tracker!")
 
         Spacer(modifier = Modifier.height(32.dp))
 

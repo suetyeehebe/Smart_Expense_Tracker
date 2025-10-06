@@ -1,4 +1,4 @@
-package com.fit3163.myapplication
+package com.fit3163.myapplication.data.budgets
 
 data class Budget(
     val category: String,

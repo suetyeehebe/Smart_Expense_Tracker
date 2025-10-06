@@ -53,59 +53,36 @@ class TaggunOcrHelper {
             val json = JSONObject(rawJson)
             val cleanObject = JSONObject()
 
-            // Handle totalAmount
-            cleanObject.put(
-                "totalAmount",
-                when (val ta = json.opt("totalAmount")) {
-                    is JSONObject -> ta.optDouble("data", 0.0)
-                    is Number -> ta.toDouble()
-                    else -> 0.0
-                }
-            )
+            // Get receipt full text
+            val receiptText = when (val txt = json.opt("text")) {
+                is JSONObject -> txt.optString("text", "")
+                is String -> txt
+                else -> ""
+            }
 
-            // Handle paidAmount
-            cleanObject.put(
-                "paidAmount",
-                when (val pa = json.opt("paidAmount")) {
-                    is JSONObject -> pa.optDouble("data", 0.0)
-                    is Number -> pa.toDouble()
-                    else -> 0.0
-                }
-            )
+            // --- Extract total amount (flexible) ---
+            var totalAmount = 0.0
+            val totalRegex = Regex("Total\\s*(?:\\(MYR\\))?\\s*[:]?\\s*([0-9]+(?:[\\.,][0-9]{1,2})?)", RegexOption.IGNORE_CASE)
+            val matchTotal = totalRegex.find(receiptText.replace("\n", " "))
+            if (matchTotal != null) {
+                totalAmount = matchTotal.groupValues[1].replace(",", ".").toDouble()
+            }
 
-            // Handle change amount from amounts array if exists
-            val changeAmount = json.optJSONArray("amounts")?.let { amounts ->
-                var change: Double? = null
-                for (i in 0 until amounts.length()) {
-                    val obj = amounts.getJSONObject(i)
-                    if (obj.optString("text").contains("Change", ignoreCase = true)) {
-                        change = when (val data = obj.opt("data")) {
-                            is Number -> data.toDouble()
-                            else -> 0.0
-                        }
-                        break
-                    }
-                }
-                change ?: 0.0
-            } ?: 0.0
-            cleanObject.put("change", changeAmount)
+            // --- Extract date only ---
+            var dateStr = ""
+            // Supports dd-MM-yyyy, dd/MM/yyyy, yyyy-MM-dd, yyyy/MM/dd, yyyy MM dd
+            val dateRegex = Regex(
+                "(\\d{2}[-/]\\d{2}[-/]\\d{4})|(\\d{4}[-/]\\d{2}[-/]\\d{2})|(\\d{4}\\s\\d{2}\\s\\d{2})"
+            )
+            val matchDate = dateRegex.find(receiptText)
+            if (matchDate != null) {
+                dateStr = matchDate.value
+            }
 
-            cleanObject.put(
-                "date",
-                when (val dt = json.opt("date")) {
-                    is JSONObject -> dt.optString("data", "")
-                    is String -> dt
-                    else -> ""
-                }
-            )
-            cleanObject.put(
-                "text",
-                when (val txt = json.opt("text")) {
-                    is JSONObject -> txt.optString("text", "")
-                    is String -> txt
-                    else -> ""
-                }
-            )
+            // Put into cleaned object
+            cleanObject.put("totalAmount", totalAmount)
+            cleanObject.put("date", dateStr)
+            cleanObject.put("text", receiptText)
 
             // Return pretty-printed JSON
             cleanObject.toString(4)
@@ -114,4 +91,9 @@ class TaggunOcrHelper {
             "{\"error\":\"Failed to clean JSON: ${e.message}\"}"
         }
     }
+
+
+
+
+
 }

@@ -251,10 +251,8 @@
 //    )
 //}
 
-
 package com.fit3163.myapplication
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -279,6 +277,8 @@ import androidx.compose.ui.window.DialogProperties
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
+import com.fit3163.myapplication.data.budgets.Budget
 
 @Preview(showBackground = true)
 @Composable
@@ -307,6 +307,7 @@ fun BudgetScreen() {
         topBar = {
             Text(
                 text = "Budgets",
+                fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -322,6 +323,7 @@ fun BudgetScreen() {
         LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
+                .padding(16.dp)
                 .fillMaxSize()
         ) {
             itemsIndexed(budgets) { index, budget ->
@@ -404,6 +406,7 @@ fun BudgetItem(
     }
 
     Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
@@ -417,14 +420,15 @@ fun BudgetItem(
             ) {
                 Text(
                     budget.category,
+                    fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
 
                 Text(
                     budget.type,
+                    fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
                 )
 
                 // Warning icon for budgets close to or over limit
@@ -446,7 +450,7 @@ fun BudgetItem(
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
+                    .height(32.dp)
                     .padding(top = 4.dp)
             )
 
