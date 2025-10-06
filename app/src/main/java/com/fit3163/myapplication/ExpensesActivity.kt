@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Bundle
+import android.util.Log
 import android.widget.DatePicker
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -67,7 +68,9 @@ import androidx.navigation.compose.rememberNavController
 import com.fit3163.myapplication.data.expenses.Category
 import com.fit3163.myapplication.data.expenses.Expense
 import com.fit3163.myapplication.data.expenses.ExpensesViewModel
+import com.fit3163.myapplication.data.expenses.toDto
 import com.fit3163.myapplication.ui.theme.SmartExpenseTrackerTheme
+import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -310,6 +313,22 @@ fun ExpenseDetailScreen(navController: NavHostController, expensesViewModel: Exp
                                 date = date,
                                 notes = notes
                             )
+                        val db = FirebaseFirestore.getInstance()
+                        db.collection("dates")
+                            .document(updated.date.toString()) // e.g. "2025-10-06"
+                            .collection("categories")
+                            .document(updated.category.toString())
+                            .collection("expenses")
+                            .document(updated.id)
+                            .set(updated.toDto())
+
+
+                            .addOnSuccessListener {
+                                Log.d("Firestore", "Expense saved successfully")
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("Firestore", "Error saving expense", e)
+                            }
                         expensesViewModel.upsert(updated)
                         //navController.navigate("Expenses")
                         navController.popBackStack()
