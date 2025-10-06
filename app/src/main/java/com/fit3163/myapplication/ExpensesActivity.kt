@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Bundle
+import android.util.Log
 import android.widget.DatePicker
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -40,6 +41,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -66,7 +68,9 @@ import androidx.navigation.compose.rememberNavController
 import com.fit3163.myapplication.data.expenses.Category
 import com.fit3163.myapplication.data.expenses.Expense
 import com.fit3163.myapplication.data.expenses.ExpensesViewModel
+import com.fit3163.myapplication.data.expenses.toDto
 import com.fit3163.myapplication.ui.theme.SmartExpenseTrackerTheme
+import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -117,7 +121,7 @@ fun ExpensesScreen(navController: NavHostController, expensesViewModel: Expenses
         )
     )
 
-    var expanded by remember { mutableStateOf(false) }
+    //var expanded by remember { mutableStateOf(false) }
     var expenses = sampleExpenses
     var selectedMonth by remember { mutableStateOf(YearMonth.of(2025, 8)) }
     // Filter expenses for the selected month
@@ -133,7 +137,7 @@ fun ExpensesScreen(navController: NavHostController, expensesViewModel: Expenses
     Column(modifier = Modifier.padding(16.dp)) {
 
         Row(){
-            Text("Expenses", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+            Text("Expenses", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
 
 //            ExposedDropdownMenuBox(
 //                expanded = expanded,
@@ -165,9 +169,9 @@ fun ExpensesScreen(navController: NavHostController, expensesViewModel: Expenses
 //            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
 //            IconButton(onClick = { selectedMonth = selectedMonth.minusMonths(1) }) {
 //                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous Month")
 //            }
@@ -309,6 +313,22 @@ fun ExpenseDetailScreen(navController: NavHostController, expensesViewModel: Exp
                                 date = date,
                                 notes = notes
                             )
+                        val db = FirebaseFirestore.getInstance()
+                        db.collection("dates")
+                            .document(updated.date.toString()) // e.g. "2025-10-06"
+                            .collection("categories")
+                            .document(updated.category.toString())
+                            .collection("expenses")
+                            .document(updated.id)
+                            .set(updated.toDto())
+
+
+                            .addOnSuccessListener {
+                                Log.d("Firestore", "Expense saved successfully")
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("Firestore", "Error saving expense", e)
+                            }
                         expensesViewModel.upsert(updated)
                         //navController.navigate("Expenses")
                         navController.popBackStack()
@@ -371,7 +391,7 @@ fun ExpenseDetailScreen(navController: NavHostController, expensesViewModel: Exp
 
 
             // Date picker
-            val context = LocalContext.current
+            //val context = LocalContext.current
             //val datePickerDialog = DatePickerFun(date)
 
             // Date (opens DatePickerDialog)

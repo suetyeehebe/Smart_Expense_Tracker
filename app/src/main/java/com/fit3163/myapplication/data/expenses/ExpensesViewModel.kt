@@ -22,6 +22,7 @@ class ExpensesViewModel : ViewModel() {
     val expenses_list = seed()
     // pretend repository feed
     private val all = MutableStateFlow(expenses_list)
+    val allItems: StateFlow<List<Expense>> = all.asStateFlow()
 
     private val month = MutableStateFlow(YearMonth.now())
 

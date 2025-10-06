@@ -105,9 +105,7 @@ fun MyNavHost(
             //onSelectedChange("Analytics")
             AnalyticsScreen(
                 navController = navController,
-                authViewModel = authViewModel,
-                currentTheme = currentTheme,
-                onThemeChanged = onThemeChanged
+                expensesVm = expensesViewModel
             )
         }
 
@@ -157,10 +155,32 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                 if (imageFile != null) {
                     Log.d("OCR", "OCR callback reached, sending to Firestore")
                     taggunOcrHelper.sendImageForOcr(imageFile) { jsonResult ->
-                        scannedJson = jsonResult
-                        saveJsonToDownloads(context, jsonResult)
-                        saveJsonToFirestore(context, jsonResult)
+                        try {
+                            Log.d("OCR", ">>> Entered OCR callback!")
+
+                            if (jsonResult.isNullOrBlank()) {
+                                Log.e("OCR", "jsonResult is NULL or empty! Skipping save.")
+                                return@sendImageForOcr
+                            }
+
+                            scannedJson = jsonResult
+                            Log.d("FirestoreUpload", "OCR callback received JSON (length=${jsonResult.length}): $jsonResult")
+
+                            // Run on UI thread for Toast + Firestore
+                            (context as? Activity)?.runOnUiThread {
+                                saveJsonToDownloads(context, jsonResult)
+                                saveJsonToFirestore(context, jsonResult)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("OCR", "Exception inside OCR callback: ${e.message}", e)
+                        }
                     }
+
+
+
+
+
+
                 } else {
                     Toast.makeText(context, "Failed to read image", Toast.LENGTH_SHORT).show()
                 }
@@ -286,7 +306,6 @@ fun uriToFile(context: Context, uri: Uri): File? {
 
 // Save JSON to Downloads
 fun saveJsonToDownloads(context: Context, json: String) {
-    Log.d("FirestoreUpload", "saveJsonToFirestore triggered with JSON: $json") // Add this
     try {
         val fileName = "ocr_result_${System.currentTimeMillis()}.txt"
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -300,41 +319,57 @@ fun saveJsonToDownloads(context: Context, json: String) {
 }
 
 // Save JSON to Firestore (safe version)
+// Save JSON to Firestore (clean version, no timestamp)
 fun saveJsonToFirestore(context: Context, json: String) {
-    Log.d("FirestoreUpload", "saveJsonToFirestore triggered with JSON: $json")
+    Toast.makeText(context, "saveJsonToFirestore called!", Toast.LENGTH_SHORT).show()
+    Log.d("FirestoreUpload", "Entered saveJsonToFirestore with JSON length=${json.length}")
+    Log.d("FirestoreUpload", "Raw JSON content: $json")
 
     val db = FirebaseFirestore.getInstance()
     try {
         val jsonObject = JSONObject(json)
+
         val totalAmount = jsonObject.optDouble("totalAmount", 0.0)
-        val paidAmount = jsonObject.optDouble("paidAmount", 0.0)
         val date = jsonObject.optString("date", "")
-        val dataMap = mapOf(
-            "rawReceipt" to json,
-            "totalAmount" to totalAmount,
-            "paidAmount" to paidAmount,
-            "date" to date
+        val text = jsonObject.optString("text", "")
+
+        Log.d(
+            "FirestoreUpload",
+            "Parsed values -> totalAmount=$totalAmount, date=$date, text(length)=${text.length}"
         )
 
-        // Ensure Firestore runs on main thread
-        (context as? Activity)?.runOnUiThread {
-            db.collection("receipts")
-                .add(dataMap)
-                .addOnSuccessListener { doc ->
-                    Log.d("FirestoreUpload", "Upload success! Doc ID: ${doc.id}")
-                    Toast.makeText(context, "Uploaded to Firestore!", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { e ->
-                    Log.e("FirestoreUpload", "Upload failed", e)
-                    Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-        }
+        val dataMap = mapOf(
+            "totalAmount" to totalAmount,
+            "date" to date,
+            "text" to text
+        )
+
+        Log.d("FirestoreUpload", "Data map to upload: $dataMap")
+
+        db.collection("receipts")
+            .add(dataMap)
+            .addOnSuccessListener { doc ->
+                Log.d("FirestoreUpload", "Upload success! Doc ID: ${doc.id}")
+                Toast.makeText(context, "Uploaded to Firestore!", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Log.e("FirestoreUpload", "Upload failed: ${e.message}", e)
+                Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
 
     } catch (e: Exception) {
-        Log.e("FirestoreUpload", "Error uploading JSON", e)
-        Toast.makeText(context, "Failed to upload JSON", Toast.LENGTH_SHORT).show()
+        Log.e("FirestoreUpload", "Exception while parsing JSON: $json", e)
+        Toast.makeText(context, "Failed to upload JSON: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }
+
+
+
+
+
+
+
+
 
 fun Context.findActivity(): Activity {
     var ctx = this

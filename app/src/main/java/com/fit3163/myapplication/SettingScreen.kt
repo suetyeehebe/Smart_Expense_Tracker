@@ -52,7 +52,7 @@ fun SettingScreen(
             verticalArrangement = Arrangement.Top
         ) {
             //Spacer(modifier = Modifier.height(40.dp))
-            Text("Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Text("Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(40.dp))
 
             // Account Settings Row
