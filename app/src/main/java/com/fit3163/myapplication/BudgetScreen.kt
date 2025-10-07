@@ -470,8 +470,10 @@ fun BudgetItem(
                 }
             }
 
-            Text("RM ${budget.spent} out of RM ${budget.total}", modifier = Modifier.padding(top = 4.dp))
-
+            Text(
+                "RM ${"%.2f".format(spent)} out of RM ${budget.total}",
+                modifier = Modifier.padding(top = 4.dp)
+            )
             LinearProgressIndicator(
                 progress = progress.coerceIn(0f, 1f),
                 color = progressColor,
