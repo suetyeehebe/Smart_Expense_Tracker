@@ -220,7 +220,7 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
             selected = selected == "Add",
             onClick = {
                 showSheet = true
-                      },
+            },
             icon = { Icon(Icons.Default.Add, contentDescription = null) }
         )
 

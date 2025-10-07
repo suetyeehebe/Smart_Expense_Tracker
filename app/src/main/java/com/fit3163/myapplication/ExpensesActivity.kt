@@ -303,7 +303,7 @@ fun ExpenseDetailScreen(navController: NavHostController, expensesViewModel: Exp
 
                         if (parsed == null || parsed <= 0.0) {
                             amountError = true
-                            return@clickable // ⛔ don’t save
+                            return@clickable
                         }
 
                         val updated = (oriExpense ?: Expense(date = date, category = category, amount = parsed))

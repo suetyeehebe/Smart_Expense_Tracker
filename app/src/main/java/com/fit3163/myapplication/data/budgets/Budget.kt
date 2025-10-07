@@ -4,10 +4,8 @@ import com.fit3163.myapplication.data.expenses.Expense
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.Locale
-import java.util.UUID
 
 data class Budget(
-    val id: String = UUID.randomUUID().toString(), // Add ID field
     val category: String?, // makes this nullable
     val total: Int,
     val type: String // "Monthly" or "Weekly"
@@ -36,18 +34,3 @@ fun LocalDate.isInThisWeek(): Boolean {
     return get(weekFields.weekOfWeekBasedYear()) == now.get(weekFields.weekOfWeekBasedYear()) &&
             year == now.year
 }
-
-data class BudgetDto(
-    val id: String = "",
-    val category: String? = null,
-    val total: Int = 0,
-    val type: String = ""
-)
-
-fun Budget.toDto(): BudgetDto = BudgetDto(
-    id = id,
-    category = category,
-    total = total,
-    type = type
-)
-
