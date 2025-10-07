@@ -1,8 +1,8 @@
-  {
+{
   "project_info": {
     "project_number": "334278645859",
     "project_id": "smart-expenses-tracker-d1154",
-    "storage_bucket": "smart-expenses-tracker-d1154.firebasestorage.app"
+    "storage_bucket": "smart-expenses-tracker-d1154.appspot.com"
   },
   "client": [
     {

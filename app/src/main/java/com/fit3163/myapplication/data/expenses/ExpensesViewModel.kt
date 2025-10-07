@@ -2,6 +2,7 @@ package com.fit3163.myapplication.data.expenses
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fit3163.myapplication.data.budgets.Budget
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,9 @@ class ExpensesViewModel : ViewModel() {
 
     private val month = MutableStateFlow(YearMonth.now())
 
+    private val _budgets = MutableStateFlow<List<Budget>>(emptyList()) // added
+    val budgets: StateFlow<List<Budget>> = _budgets.asStateFlow()
+
     val ui: StateFlow<ExpensesUiState> =
         combine(all, month) { items, m ->
             val filtered = items.filter { YearMonth.from(it.date) == m }
@@ -44,6 +48,22 @@ class ExpensesViewModel : ViewModel() {
     }
 
     fun delete(id: String) { all.value = all.value.filterNot { it.id == id } }
+
+    fun addBudget(budget: Budget) {
+        _budgets.value = _budgets.value + budget
+    }
+
+    fun updateBudget(index: Int, updated: Budget) {
+        _budgets.value = _budgets.value.toMutableList().apply {
+            set(index, updated)
+        }
+    }
+
+    fun deleteBudget(index: Int) {
+        _budgets.value = _budgets.value.toMutableList().apply {
+            removeAt(index)
+        }
+    }
 }
 
 private fun seed(): List<Expense> {
