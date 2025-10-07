@@ -19,10 +19,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.fit3163.myapplication.ui.theme.SmartExpenseTrackerTheme
 import com.fit3163.myapplication.ui.theme.ThemeMode
+import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         enableEdgeToEdge()
         setContent {
             // 🔹 Step 1: Keep track of theme mode

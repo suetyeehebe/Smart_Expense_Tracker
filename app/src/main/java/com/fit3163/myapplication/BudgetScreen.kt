@@ -20,8 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fit3163.myapplication.data.budgets.Budget
+import com.fit3163.myapplication.data.budgets.toDto
 import com.fit3163.myapplication.data.expenses.Category
 import com.fit3163.myapplication.data.expenses.ExpensesViewModel
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,11 +33,64 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
     val expensesUi by expensesViewModel.ui.collectAsStateWithLifecycle()
     val expenses = expensesUi.items
     val budgets by expensesViewModel.budgets.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var editIndex by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Int?>(null) }
     var viewCategory: Budget? by remember { mutableStateOf(null) }
+
+    // Firebase instance - this will be your placeholder
+    val db = FirebaseFirestore.getInstance()
+
+    // Function to save budget to Firebase
+    fun saveBudgetToFirebase(budget: Budget) {
+        println("🟢 DEBUG: saveBudgetToFirebase() CALLED with budget: ${budget.category ?: "Overall"} - RM ${budget.total}")
+
+        // Remove the coroutineScope.launch and .await() completely
+        db.collection("budgets")
+            .document(budget.id)
+            .set(budget.toDto())
+            .addOnSuccessListener {
+                println("SUCCESS: Budget saved to Firebase: ${budget.id}")
+            }
+            .addOnFailureListener { e ->
+                println("ERROR saving budget to Firebase: ${e.message}")
+                e.printStackTrace()
+            }
+    }
+
+    fun deleteBudgetFromFirebase(budgetId: String) {
+        println("🟢 DEBUG: deleteBudgetFromFirebase() CALLED with ID: $budgetId")
+
+        // Remove the coroutineScope.launch and .await() completely
+        db.collection("budgets")
+            .document(budgetId)
+            .delete()
+            .addOnSuccessListener {
+                println("SUCCESS: Budget deleted from Firebase: $budgetId")
+            }
+            .addOnFailureListener { e ->
+                println("ERROR deleting budget from Firebase: ${e.message}")
+                e.printStackTrace()
+            }
+    }
+
+//    // Mock Firebase functions for testing
+//    fun saveBudgetToFirebase(budget: Budget) {
+//        println("[MOCK FIREBASE] Would save budget to Firebase:")
+//        println("   - ID: ${budget.id}")
+//        println("   - Category: ${budget.category ?: "Overall"}")
+//        println("   - Total: RM ${budget.total}")
+//        println("   - Type: ${budget.type}")
+//        // You could also show a Snackbar to the user
+//    }
+//
+//    fun deleteBudgetFromFirebase(budgetId: String) {
+//        println("[MOCK FIREBASE] Would delete budget from Firebase: $budgetId")
+//        // You could also show a Snackbar to the user
+//    }
+
 
     Scaffold(
         topBar = {
@@ -85,14 +142,16 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
             }
         }
 
-        // ✅ All dialogs go **inside** the Scaffold’s content lambda
         if (showAddDialog) {
             BudgetDialog(
                 title = "Add Budget",
                 initialBudget = null,
                 onDismiss = { showAddDialog = false },
                 onConfirm = { newBudget ->
+                    println("🟢 DEBUG: Add Budget Dialog - onConfirm triggered")
                     expensesViewModel.addBudget(newBudget)
+                    // Save to Firebase
+                    saveBudgetToFirebase(newBudget)
                     showAddDialog = false
                 }
             )
@@ -104,23 +163,32 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
                 initialBudget = budgets[idx],
                 onDismiss = { editIndex = null },
                 onConfirm = { updatedBudget ->
+                    println("🟢 DEBUG: Edit Budget Dialog - onConfirm triggered")
                     expensesViewModel.updateBudget(idx, updatedBudget)
+                    // Update Firebase
+                    saveBudgetToFirebase(updatedBudget)
                     editIndex = null
                 }
             )
         }
 
         showDeleteDialog?.let { idx ->
+            val budgetToDelete = budgets[idx]
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = null },
                 confirmButton = {
                     TextButton(onClick = {
+                        println("🟢 DEBUG: Delete Budget Dialog - Confirm button clicked")
                         expensesViewModel.deleteBudget(idx)
+                        // Delete from Firebase
+                        deleteBudgetFromFirebase(budgetToDelete.id)
                         showDeleteDialog = null
                     }) { Text("Delete") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = null }) { Text("Cancel") }
+                    TextButton(onClick = {
+                        println("🟢 DEBUG: Delete Budget Dialog - Cancel button clicked")
+                        showDeleteDialog = null }) { Text("Cancel") }
                 },
                 title = { Text("Delete Budget") },
                 text = { Text("Are you sure you want to delete this budget?") }
@@ -233,10 +301,10 @@ fun BudgetItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetDialog(
-title: String,
-initialBudget: Budget?,
-onDismiss: () -> Unit,
-onConfirm: (Budget) -> Unit
+    title: String,
+    initialBudget: Budget?,
+    onDismiss: () -> Unit,
+    onConfirm: (Budget) -> Unit
 ) {
     var category by remember { mutableStateOf(initialBudget?.category ?: Category.FOOD.label) }
     var total by remember { mutableStateOf(initialBudget?.total?.toString() ?: "") }
@@ -310,7 +378,26 @@ onConfirm: (Budget) -> Unit
                 onClick = {
                     val totalInt = total.toIntOrNull() ?: initialBudget?.total ?: 0
                     val selectedCategory = if (isOverall) null else category
-                    onConfirm(Budget(selectedCategory, totalInt, type))
+
+                    // FIX: Create Budget with proper parameters including ID
+                    val newBudget = if (initialBudget != null) {
+                        // Editing existing budget - keep the same ID
+                        Budget(
+                            id = initialBudget.id,
+                            category = selectedCategory,
+                            total = totalInt,
+                            type = type
+                        )
+                    } else {
+                        // Creating new budget - generate new ID
+                        Budget(
+                            category = selectedCategory,
+                            total = totalInt,
+                            type = type
+                        )
+                    }
+
+                    onConfirm(newBudget)
                 },
                 enabled = total.toIntOrNull() != null
             ) {
