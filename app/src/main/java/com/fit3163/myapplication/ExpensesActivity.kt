@@ -33,7 +33,9 @@ import com.fit3163.myapplication.data.expenses.Category
 import com.fit3163.myapplication.data.expenses.Expense
 import com.fit3163.myapplication.data.expenses.ExpensesViewModel
 import com.fit3163.myapplication.data.expenses.toDto
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -179,30 +181,47 @@ fun ExpenseDetailScreen(
                                     date = date,
                                     notes = notes
                                 )
-
+                                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@clickable
                                 val db = FirebaseFirestore.getInstance()
-                                db.collection("dates")
+
+// 🔹 Reference to the current date document
+                                val dateRef = db.collection("users")
+                                    .document(uid)
+                                    .collection("dates")
                                     .document(updated.date.toString())
+
+// ✅ Ensure the "date" document exists (creates if missing)
+                                dateRef.set(mapOf("date" to updated.date.toString()), SetOptions.merge())
+
+// 🔹 Reference to the category document under that date
+                                val categoryRef = dateRef
                                     .collection("categories")
                                     .document(updated.category.toString())
+
+// ✅ Ensure the "category" document exists (creates if missing)
+                                categoryRef.set(mapOf("category" to updated.category.toString()), SetOptions.merge())
+
+// 🔹 Now save the expense inside the category's "expenses" subcollection
+                                categoryRef
                                     .collection("expenses")
                                     .document(updated.id)
                                     .set(updated.toDto())
                                     .addOnSuccessListener {
-                                        Log.d("Firestore", "✅ Expense saved successfully")
+                                        Log.d("Firestore", "✅ Expense saved successfully to Firestore")
 
-                                        // 👇 Refresh expenses from Firestore after saving
+                                        // 👇 Refresh expenses after saving
                                         expensesViewModel.loadExpensesFromFirebase()
 
-                                        // 👇 Then update the local list as well
+                                        // 👇 Update the local state as well
                                         expensesViewModel.upsert(updated)
 
-                                        // 👇 Finally navigate back
+                                        // 👇 Navigate back
                                         navController.popBackStack()
                                     }
                                     .addOnFailureListener { e ->
                                         Log.e("Firestore", "❌ Error saving expense", e)
                                     }
+
                             }
                     )
 

@@ -1,8 +1,10 @@
 package com.fit3163.myapplication.data.expenses
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fit3163.myapplication.data.budgets.Budget
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import kotlinx.coroutines.tasks.await
 import java.time.YearMonth
 
 data class ExpensesUiState(
@@ -72,7 +74,11 @@ class ExpensesViewModel : ViewModel() {
     /** ✅ Load Budgets from Firebase **/
     fun loadBudgetsFromFirebase() {
         val db = FirebaseFirestore.getInstance()
-        db.collection("budgets")
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        db.collection("users")
+            .document(uid)
+            .collection("budgets")
             .get()
             .addOnSuccessListener { result ->
                 val loadedBudgets = result.mapNotNull { doc ->
@@ -89,37 +95,110 @@ class ExpensesViewModel : ViewModel() {
                     }
                 }
                 _budgets.value = loadedBudgets
-                println("✅ Loaded ${loadedBudgets.size} budgets from Firestore")
+                println("✅ Loaded ${loadedBudgets.size} budgets for user $uid")
             }
             .addOnFailureListener { e ->
                 println("❌ Error loading budgets: ${e.message}")
             }
     }
 
-    /** ✅ Load Expenses from Firebase **/
+    /** ✅ Load Expenses from Firebase (correct structure) **/
     fun loadExpensesFromFirebase() {
         val db = FirebaseFirestore.getInstance()
-        db.collectionGroup("expenses") // read from all subcollections named "expenses"
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        println("🔄 Loading expenses for user: $uid")
+        db.collection("users")
+            .document(uid)
+            .collection("dates")
             .get()
-            .addOnSuccessListener { result ->
-                val loadedExpenses = result.mapNotNull { doc ->
-                    try {
-                        doc.toObject(ExpenseDto::class.java).toDomain()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        null
-                    }
+            .addOnSuccessListener { dateDocs ->
+                if (dateDocs.isEmpty) {
+                    println("📅 No dates found for user $uid")
+                    _all.value = emptyList()
+                    return@addOnSuccessListener
                 }
-                _all.value = loadedExpenses
-                println("✅ Loaded ${loadedExpenses.size} expenses from Firestore")
+
+                val allExpenses = mutableListOf<Expense>()
+                var remainingDates = dateDocs.size()
+
+                for (dateDoc in dateDocs) {
+                    val dateId = dateDoc.id
+                    db.collection("users")
+                        .document(uid)
+                        .collection("dates")
+                        .document(dateId)
+                        .collection("categories")
+                        .get()
+                        .addOnSuccessListener { categoryDocs ->
+                            var remainingCategories = categoryDocs.size()
+
+                            for (categoryDoc in categoryDocs) {
+                                val categoryId = categoryDoc.id
+                                db.collection("users")
+                                    .document(uid)
+                                    .collection("dates")
+                                    .document(dateId)
+                                    .collection("categories")
+                                    .document(categoryId)
+                                    .collection("expenses")
+                                    .get()
+                                    .addOnSuccessListener { expenseDocs ->
+                                        val expenses = expenseDocs.mapNotNull { expenseDoc ->
+                                            try {
+                                                expenseDoc.toObject(ExpenseDto::class.java).toDomain()
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                                null
+                                            }
+                                        }
+
+                                        allExpenses.addAll(expenses)
+                                        println("✅ Loaded ${expenses.size} expenses under $dateId/$categoryId")
+
+                                        remainingCategories--
+                                        if (remainingCategories == 0) {
+                                            remainingDates--
+                                            if (remainingDates == 0) {
+                                                _all.value = allExpenses
+                                                println("🎯 Finished loading: ${allExpenses.size} total expenses")
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        println("❌ Error loading expenses in $dateId/$categoryId: ${e.message}")
+                                    }
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            println("❌ Error loading categories for $dateId: ${e.message}")
+                        }
+                }
             }
             .addOnFailureListener { e ->
-                println("❌ Error loading expenses: ${e.message}")
+                println("❌ Error loading dates: ${e.message}")
             }
     }
 
+
+
+
     init {
-        loadBudgetsFromFirebase()
-        loadExpensesFromFirebase() // 👈 now this automatically loads your Firestore expenses
+        val auth = FirebaseAuth.getInstance()
+
+        // 🔄 Automatically reload when login/logout happens
+        auth.addAuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            if (user != null) {
+                println("👤 User logged in: ${user.uid}")
+                loadBudgetsFromFirebase()
+                loadExpensesFromFirebase()
+            } else {
+                println("🚪 User logged out — clearing local data")
+                _all.value = emptyList()
+                _budgets.value = emptyList()
+            }
+        }
     }
+
 }

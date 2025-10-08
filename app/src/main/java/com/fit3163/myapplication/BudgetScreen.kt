@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fit3163.myapplication.data.budgets.Budget
 import com.fit3163.myapplication.data.expenses.Category
 import com.fit3163.myapplication.data.expenses.ExpensesViewModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -35,8 +36,8 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
 
     val scope = rememberCoroutineScope()
     val db = FirebaseFirestore.getInstance()
-    val budgetsRef = db.collection("budgets")
-
+    val budgetsRef = db.collection("users")
+    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
     // Helper functions for Firestore
     fun addBudgetToFirebase(budget: Budget) {
         println("🟢 DEBUG: Adding budget to Firebase: ${budget.category ?: "Overall"} - RM ${budget.total}")
@@ -49,8 +50,10 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
             "type" to budget.type
         )
 
-        budgetsRef.document(budget.id)
-            .set(budgetData)
+        budgetsRef.document(uid)
+            .collection("budgets")
+            .document(budget.id)
+            .set(budget)
             .addOnSuccessListener {
                 println("✅ SUCCESS: Budget added to Firebase with ID: ${budget.id}")
                 println("✅ Check Firebase Console - you should see this data now!")
@@ -71,8 +74,10 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
             "type" to budget.type
         )
 
-        budgetsRef.document(budget.id)
-            .set(budgetData)
+        budgetsRef.document(uid)
+            .collection("budgets")
+            .document(budget.id)
+            .set(budget)
             .addOnSuccessListener {
                 println("✅ SUCCESS: Budget updated in Firebase: ${budget.id}")
             }
@@ -82,9 +87,11 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
     }
 
     fun deleteBudgetFromFirebase(budgetId: String) {
-        println("🟢 DEBUG: Deleting budget from Firebase: $budgetId")
+        println("🟢 DEBUG: Deleting budget from Firebase for user: $uid, id=$budgetId")
 
-        budgetsRef.document(budgetId)
+        budgetsRef.document(uid)
+            .collection("budgets")
+            .document(budgetId)
             .delete()
             .addOnSuccessListener {
                 println("✅ SUCCESS: Budget deleted from Firebase: $budgetId")
@@ -93,6 +100,7 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
                 println("❌ ERROR deleting budget: ${e.message}")
             }
     }
+
 
     var showAddDialog by remember { mutableStateOf(false) }
     var editIndex by remember { mutableStateOf<Int?>(null) }
