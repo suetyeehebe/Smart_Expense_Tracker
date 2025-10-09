@@ -43,98 +43,114 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccountSettingScreen(navController: NavHostController){
-
-    var name by remember { mutableStateOf("") }
+fun AccountSettingScreen(
+    navController: NavHostController,
+    authViewModel: AuthViewModel
+) {
+    val firebaseUser = FirebaseAuth.getInstance().currentUser
+    var name by remember { mutableStateOf(firebaseUser?.displayName ?: "") }
+    val email = firebaseUser?.email ?: "No email found"
     var checked by remember { mutableStateOf(true) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->Column (
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
-        verticalArrangement = Arrangement.Top
-
-    ){
-        Row (
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                modifier = Modifier
-                    .clickable{navController.navigate("Settings")}
+                .fillMaxSize()
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.Top
+        ) {
+            // Top bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier.clickable { navController.navigate("Settings") }
+                )
+                Spacer(modifier = Modifier.width(38.dp))
+                Text("Account Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            }
 
-            )
-            Spacer(modifier = Modifier.width(38.dp))
-            Text("Account Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-
-        }
-
-        Text("qmah0001@student.monash.edu",fontSize = 24.sp,
-            modifier = Modifier.
-            align(Alignment.CenterHorizontally))
-
-        Spacer(modifier = Modifier.height(40.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Icon(
-                painter = painterResource(id = R.drawable.person_icon2),
-                contentDescription = "Account Icon",
-                modifier = Modifier.size(48.dp)
+            // Email (from Firebase)
+            Text(
+                email,
+                fontSize = 24.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            TextField(
-                value = name,
-                onValueChange = { name = it },
-                label = {
-                    Text("Name", fontSize = 24.sp) },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent, // No background
-                    unfocusedIndicatorColor = Color.Gray, // Underline color
-                    focusedIndicatorColor = Color.Black,
-                    disabledIndicatorColor = Color.LightGray
-                ),
-                singleLine = true,
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 24.sp)
-            )
+            Spacer(modifier = Modifier.height(40.dp))
 
-        }
-        Spacer(modifier = Modifier.height(40.dp))
+            // Editable Name
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.person_icon2),
+                    contentDescription = "Account Icon",
+                    modifier = Modifier.size(48.dp)
+                )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Icon(
-                painter = painterResource(id = R.drawable.notification_icon2),
-                contentDescription = "Notification Icon",
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.width(20.dp))
-            Text("Notifications", fontSize = 24.sp)
-            Spacer(modifier = Modifier.width(100.dp))
-            Switch(
-                checked = checked,
-                onCheckedChange = { isChecked ->
-                    checked = isChecked
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name", fontSize = 24.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.textFieldColors(
+                        containerColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Gray,
+                        focusedIndicatorColor = Color.Black
+                    ),
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 24.sp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Save Button for name update
+            androidx.compose.material3.Button(
+                onClick = {
+                    val user = FirebaseAuth.getInstance().currentUser
+                    val updates = com.google.firebase.auth.userProfileChangeRequest {
+                        displayName = name
+                    }
+                    user?.updateProfile(updates)
                 },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text("Save Changes")
+            }
 
-    }
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // Notifications toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.notification_icon2),
+                    contentDescription = "Notification Icon",
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.width(20.dp))
+                Text("Notifications", fontSize = 24.sp)
+                Spacer(modifier = Modifier.width(100.dp))
+                Switch(
+                    checked = checked,
+                    onCheckedChange = { isChecked -> checked = isChecked },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
     }
 }

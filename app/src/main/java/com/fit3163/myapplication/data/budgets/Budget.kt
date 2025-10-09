@@ -4,15 +4,17 @@ import com.fit3163.myapplication.data.expenses.Expense
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.Locale
+import java.util.UUID
 
 data class Budget(
-    val category: String?, // makes this nullable
-    val total: Int,
-    val type: String // "Monthly" or "Weekly"
+    val id: String = UUID.randomUUID().toString(),
+    val category: String? = null,
+    val total: Int = 0,
+    val type: String = "Monthly"
 ) {
     fun spent(expenses: List<Expense>): Double {
         val filtered = when {
-            category == null -> expenses // ✅ all categories
+            category == null -> expenses
             else -> expenses.filter { it.category.label == category }
         }
 
