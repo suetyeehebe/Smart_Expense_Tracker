@@ -1,5 +1,6 @@
 package com.fit3163.myapplication
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,12 +51,13 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun AccountSettingScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel
 ) {
     val firebaseUser = FirebaseAuth.getInstance().currentUser
     var name by remember { mutableStateOf(firebaseUser?.displayName ?: "") }
     val email = firebaseUser?.email ?: "No email found"
     var checked by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val user = FirebaseAuth.getInstance().currentUser
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -62,7 +65,7 @@ fun AccountSettingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.Top
         ) {
             // Top bar
@@ -73,12 +76,23 @@ fun AccountSettingScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    modifier = Modifier.clickable { navController.navigate("Settings") }
+                    modifier = Modifier.clickable {
+                        val currentName = user?.displayName
+                        if (name != currentName){
+                            val updates = com.google.firebase.auth.userProfileChangeRequest {
+                                displayName = name
+                            }
+                            user?.updateProfile(updates)
+                            Toast.makeText(context, "Name is successfully updated.", Toast.LENGTH_LONG).show()
+                        }
+                        navController.navigate("Settings")
+                    }
                 )
                 Spacer(modifier = Modifier.width(38.dp))
                 Text("Account Settings", fontSize = 32.sp, fontWeight = FontWeight.Bold)
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
             // Email (from Firebase)
             Text(
                 email,
@@ -116,19 +130,19 @@ fun AccountSettingScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Save Button for name update
-            androidx.compose.material3.Button(
-                onClick = {
-                    val user = FirebaseAuth.getInstance().currentUser
-                    val updates = com.google.firebase.auth.userProfileChangeRequest {
-                        displayName = name
-                    }
-                    user?.updateProfile(updates)
-                },
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-                Text("Save Changes")
-            }
+//            // Save Button for name update
+//            Button(
+//                onClick = {
+//                    val user = FirebaseAuth.getInstance().currentUser
+//                    val updates = com.google.firebase.auth.userProfileChangeRequest {
+//                        displayName = name
+//                    }
+//                    user?.updateProfile(updates)
+//                },
+//                modifier = Modifier.align(Alignment.CenterHorizontally)
+//            ) {
+//                Text("Save Changes")
+//            }
 
             Spacer(modifier = Modifier.height(40.dp))
 
