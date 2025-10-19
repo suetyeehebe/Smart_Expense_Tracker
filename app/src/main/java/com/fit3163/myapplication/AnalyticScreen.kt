@@ -436,6 +436,7 @@ import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.*
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
 
 @Composable
@@ -573,12 +574,13 @@ private fun GranularityDropdown(selected: TimeGranularity, onChange: (TimeGranul
             axisRight.isEnabled = false
             axisLeft.axisMinimum = 0f
             xAxis.position = XAxis.XAxisPosition.BOTTOM
+            xAxis.valueFormatter = IndexAxisValueFormatter(labels)
             xAxis.granularity = 1f
             xAxis.setDrawGridLines(false)
-            xAxis.valueFormatter = object : ValueFormatter() {
-                override fun getFormattedValue(value: Float): String = labels.getOrNull(value.toInt()) ?: ""
-            }
 
+            xAxis.labelCount = labels.size
+            xAxis.axisMinimum = -0.5f
+            xAxis.axisMaximum = labels.size -0.5f
             setTouchEnabled(false)
             isDragEnabled = false
             setScaleEnabled(false)
@@ -589,6 +591,12 @@ private fun GranularityDropdown(selected: TimeGranularity, onChange: (TimeGranul
         }
     }, update = { chart ->
         chart.data = data
+
+        chart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
+        chart.xAxis.labelCount = labels.size
+        chart.xAxis.axisMinimum = -0.5f
+        chart.xAxis.axisMaximum = labels.size - 0.5f
+
         chart.invalidate()
     })
 }

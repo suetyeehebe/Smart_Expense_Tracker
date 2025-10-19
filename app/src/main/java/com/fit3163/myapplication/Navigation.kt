@@ -98,7 +98,7 @@ fun MyNavHost(
 
         composable("account settings") {
             //onSelectedChange("Settings")
-            AccountSettingScreen(navController, authViewModel)
+            AccountSettingScreen(navController)
         }
 
         composable("Analytics") {
