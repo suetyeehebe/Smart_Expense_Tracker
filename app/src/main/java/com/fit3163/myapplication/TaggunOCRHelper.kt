@@ -27,7 +27,7 @@ class TaggunOcrHelper {
             .url("https://api.taggun.io/api/receipt/v1/verbose/file")
             .post(body)
             .addHeader("accept", "application/json")
-            .addHeader("apikey", "a6f3824a3a5c499699e3af7035de153d") // Replace with your key
+            .addHeader("apikey", "2b2d786f3dee496b954e6d6a341d3151") // Replace with your key
             .build()
 
         Log.d("OCR", "Sending request to Taggun OCR API...")
@@ -62,21 +62,42 @@ class TaggunOcrHelper {
 
             // --- Extract total amount (flexible) ---
             var totalAmount = 0.0
-            val totalRegex = Regex("Total\\s*(?:\\(MYR\\))?\\s*[:]?\\s*([0-9]+(?:[\\.,][0-9]{1,2})?)", RegexOption.IGNORE_CASE)
-            val matchTotal = totalRegex.find(receiptText.replace("\n", " "))
-            if (matchTotal != null) {
-                totalAmount = matchTotal.groupValues[1].replace(",", ".").toDouble()
+            // Try multiple patterns for total amount
+            val totalPatterns = listOf(
+                "Total\\s*(?:\\(MYR\\))?\\s*[:]?\\s*RM?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Total RM 1,193.4
+                "Amount\\s*[:]?\\s*RM?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Amount: RM59.00 or Amount RM 1,193.4
+                "Total\\s*[:]?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Total: 1,193.4
+                "Amount\\s*([0-9,]+(?:\\.[0-9]{1,2})?)" // Amount 1,193.4
+            )
+            
+            for (pattern in totalPatterns) {
+                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
+                val match = regex.find(receiptText.replace("\n", " "))
+                if (match != null) {
+                    totalAmount = match.groupValues[1].replace(",", "").toDouble()
+                    break
+                }
             }
 
             // --- Extract date only ---
             var dateStr = ""
-            // Supports dd-MM-yyyy, dd/MM/yyyy, yyyy-MM-dd, yyyy/MM/dd, yyyy MM dd
-            val dateRegex = Regex(
-                "(\\d{2}[-/]\\d{2}[-/]\\d{4})|(\\d{4}[-/]\\d{2}[-/]\\d{2})|(\\d{4}\\s\\d{2}\\s\\d{2})"
+            // Try multiple date patterns
+            val datePatterns = listOf(
+                "Date\\s*[:]?\\s*(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})", // Date: 28/9/2025
+                "Order Time\\s*[:]?\\s*(\\d{4}[-/]\\d{2}[-/]\\d{2})", // Order Time: 2074-04-30
+                "(\\d{4}[-/]\\d{2}[-/]\\d{2})", // 2074-04-30
+                "(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})", // 28/9/2025
+                "(\\d{2}[-/]\\d{2}[-/]\\d{4})", // 28-04-2025
+                "(\\d{4}\\s\\d{2}\\s\\d{2})" // 2024 04 30
             )
-            val matchDate = dateRegex.find(receiptText)
-            if (matchDate != null) {
-                dateStr = matchDate.value
+            
+            for (pattern in datePatterns) {
+                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
+                val match = regex.find(receiptText)
+                if (match != null) {
+                    dateStr = match.groupValues[1]
+                    break
+                }
             }
 
             // Put into cleaned object

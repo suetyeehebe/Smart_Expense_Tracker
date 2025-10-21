@@ -158,7 +158,7 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                         try {
                             Log.d("OCR", ">>> Entered OCR callback!")
 
-                            if (jsonResult.isNullOrBlank()) {
+                            if (jsonResult.isBlank()) {
                                 Log.e("OCR", "jsonResult is NULL or empty! Skipping save.")
                                 return@sendImageForOcr
                             }
@@ -166,11 +166,31 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                             scannedJson = jsonResult
                             Log.d("FirestoreUpload", "OCR callback received JSON (length=${jsonResult.length}): $jsonResult")
 
+                            val obj = JSONObject(jsonResult)
+
+                            val ocrText = obj.optString("text", "").trim()
+                            val ocrAmount = obj.optDouble("totalAmount", 0.0)
+                            val ocrDate = obj.optString("date", "").trim()
+
                             // Run on UI thread for Toast + Firestore
                             (context as? Activity)?.runOnUiThread {
                                 saveJsonToDownloads(context, jsonResult)
                                 saveJsonToFirestore(context, jsonResult)
+
+                                // Pass OCR text forward to the AddExpense screen
+                                navController.currentBackStackEntry
+                                    ?.savedStateHandle
+                                    ?.apply {
+                                        set("ocrText", ocrText)
+                                        if (ocrDate.isNotEmpty()) set("ocrDate", ocrDate)   // keep as String, we’ll parse in screen
+                                        if (ocrAmount > 0.0) set("ocrAmount", ocrAmount)        // Double
+                                    }
+
+                                // Close sheet, then navigate
+                                showSheet = false
+                                navController.navigate("AddExpense")
                             }
+
                         } catch (e: Exception) {
                             Log.e("OCR", "Exception inside OCR callback: ${e.message}", e)
                         }
@@ -195,6 +215,8 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
+            // Close sheet before launching camera
+            showSheet = false
             cameraLauncher.launch(cameraHelper.getCameraIntent())
         } else {
             Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
@@ -257,6 +279,8 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                                 context,
                                 Manifest.permission.CAMERA
                             ) == PackageManager.PERMISSION_GRANTED -> {
+                                // Close sheet before launching camera
+                                showSheet = false
                                 cameraLauncher.launch(cameraHelper.getCameraIntent())
                             }
                             else -> {

@@ -28,16 +28,21 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.fit3163.myapplication.data.expenses.Category
 import com.fit3163.myapplication.data.expenses.Expense
 import com.fit3163.myapplication.data.expenses.ExpensesViewModel
 import com.fit3163.myapplication.data.expenses.toDto
+import com.fit3163.myapplication.data.receipts.CategorizerViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.Locale
 
 // ====================== MAIN EXPENSES SCREEN ==========================
 @Composable
@@ -140,6 +145,56 @@ fun ExpenseDetailScreen(
     var amountError by remember { mutableStateOf(false) }
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+    val ocrTextFromPrev = navController.previousBackStackEntry
+        ?.savedStateHandle
+        ?.get<String>("ocrText")
+        .orEmpty()
+        .trim()
+
+    val ocrAmountFromPrev: Double? = navController.previousBackStackEntry
+        ?.savedStateHandle
+        ?.get<Double>("ocrAmount")
+
+    val ocrDateFromPrev: String = navController.previousBackStackEntry
+        ?.savedStateHandle
+        ?.get<String>("ocrDate")
+        .orEmpty()
+        .trim()
+
+    // 🔌 Categorizer VM (no DI framework needed)
+    val catVm: CategorizerViewModel = viewModel(
+        factory = CategorizerViewModel.Factory(NetworkModule.categorizerApi())
+    )
+    val catState by catVm.ui.collectAsStateWithLifecycle()
+
+    LaunchedEffect(ocrTextFromPrev) {
+        if (ocrTextFromPrev.isNotBlank()) catVm.suggest(ocrTextFromPrev)
+    }
+
+    LaunchedEffect(catState.label) {
+        //val conf = catState.confidence ?: 0.0
+        val lbl = catState.label
+//        if (lbl != null && conf >= 0.80) {
+//            mapLabelToEnum(lbl)?.let { category = it }
+//        }
+        if (lbl != null) {
+            mapLabelToEnum(lbl)?.let { category = it }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (amount.isBlank() && (ocrAmountFromPrev ?: 0.0) > 0.0) {
+            amount = String.format(Locale.getDefault(), "%.2f", ocrAmountFromPrev)
+        }
+
+        // Prefill date if OCR parsed date is valid
+        if (ocrDateFromPrev.isNotBlank()) {
+            parseOcrDateToLocalDate(ocrDateFromPrev)?.let { parsed ->
+                date = parsed
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -285,9 +340,7 @@ fun ExpenseDetailScreen(
             Spacer(Modifier.height(8.dp))
 
             // Date Picker
-            val mDate = remember { mutableStateOf(date) }
-            val datePickerDialog = rememberDatePickerDialog(mDate)
-            LaunchedEffect(mDate.value) { date = mDate.value }
+            val datePickerDialog = rememberDatePickerDialog(date) { newDate -> date = newDate }
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
@@ -345,9 +398,17 @@ fun ExpenseDetailScreen(
 
 // ====================== DATE PICKER ==========================
 @Composable
-fun rememberDatePickerDialog(mDate: MutableState<LocalDate>): DatePickerDialog {
+fun rememberDatePickerDialog(
+    currentDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit
+): DatePickerDialog {
     val mContext = LocalContext.current
     val mCalendar = Calendar.getInstance()
+
+    // Initialize calendar with current date
+    mCalendar.set(Calendar.YEAR, currentDate.year)
+    mCalendar.set(Calendar.MONTH, currentDate.monthValue - 1)
+    mCalendar.set(Calendar.DAY_OF_MONTH, currentDate.dayOfMonth)
 
     val mYear = mCalendar.get(Calendar.YEAR)
     val mMonth = mCalendar.get(Calendar.MONTH)
@@ -357,7 +418,7 @@ fun rememberDatePickerDialog(mDate: MutableState<LocalDate>): DatePickerDialog {
         DatePickerDialog(
             mContext,
             { _: DatePicker, year: Int, month: Int, day: Int ->
-                mDate.value = LocalDate.of(year, month + 1, day)
+                onDateSelected(LocalDate.of(year, month + 1, day))
             },
             mYear,
             mMonth,
@@ -369,3 +430,29 @@ fun rememberDatePickerDialog(mDate: MutableState<LocalDate>): DatePickerDialog {
 // ====================== UTIL ==========================
 private fun YearMonth.label(): String =
     month.name.lowercase().replaceFirstChar { it.titlecase() } + " " + year
+
+private fun mapLabelToEnum(label: String): Category? = when (label.lowercase()) {
+    "food & drinks" -> Category.FOOD
+    "groceries" -> Category.GROCERIES
+    "transport" -> Category.TRANSPORT
+    "entertainment" -> Category.ENTERTAINMENT
+    "home" -> Category.HOME
+    "wearables" -> Category.WEARABLES
+    "beauty" -> Category.BEAUTY
+    "healthcare" -> Category.HEALTHCARE
+    "education" -> Category.EDUCATION
+    else -> Category.OTHER
+}
+
+private fun parseOcrDateToLocalDate(raw: String): LocalDate? {
+    val patterns = listOf(
+        "dd-MM-yyyy", "dd/MM/yyyy", "d/M/yyyy", "d-MM-yyyy",
+        "yyyy-MM-dd", "yyyy/MM/dd", "yyyy MM dd"
+    )
+    for (p in patterns) {
+        try {
+            return LocalDate.parse(raw, DateTimeFormatter.ofPattern(p, Locale.getDefault()))
+        } catch (_: DateTimeParseException) { /* try next */ }
+    }
+    return null
+}
