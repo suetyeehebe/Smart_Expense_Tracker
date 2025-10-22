@@ -27,7 +27,7 @@ class TaggunOcrHelper {
             .url("https://api.taggun.io/api/receipt/v1/verbose/file")
             .post(body)
             .addHeader("accept", "application/json")
-            .addHeader("apikey", "a6f3824a3a5c499699e3af7035de153d") // Replace with your key
+            .addHeader("apikey", "2b2d786f3dee496b954e6d6a341d3151") // Replace with your key
             .build()
 
         Log.d("OCR", "Sending request to Taggun OCR API...")

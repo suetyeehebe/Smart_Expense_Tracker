@@ -201,6 +201,32 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
         }
     }
 
+    // Gallery launcher
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val imageFile = uriToFile(context, uri)
+            if (imageFile != null) {
+                taggunOcrHelper.sendImageForOcr(imageFile) { jsonResult ->
+                    if (!jsonResult.isNullOrBlank()) {
+                        (context as? Activity)?.runOnUiThread {
+                            saveJsonToDownloads(context, jsonResult)
+                            saveJsonToFirestore(context, jsonResult)
+                        }
+                    } else {
+                        Toast.makeText(context, "OCR failed", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                Toast.makeText(context, "Failed to read image", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "No image selected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
     NavigationBar {
         NavigationBarItem(
             selected = selected == "Analytics",
@@ -243,7 +269,7 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState,
-            modifier = Modifier.height(200.dp)
+            modifier = Modifier.height(300.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -284,6 +310,22 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                     Spacer(Modifier.width(6.dp))
                     Text("Manual Input")
                 }
+
+                // For image upload
+                Spacer(Modifier.height(18.dp))
+
+                Button(
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    onClick = {
+                        galleryLauncher.launch("image/*")
+                    },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.AttachMoney, contentDescription = "UploadReceipt") // You can use another icon if you prefer
+                    Spacer(Modifier.width(6.dp))
+                    Text("Upload Receipt")
+                }
+
             }
         }
     }
