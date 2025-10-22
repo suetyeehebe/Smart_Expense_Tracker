@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -146,6 +147,35 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
             ) {
                 itemsIndexed(budgets) { index, budget ->
                     val spent = budget.spent(expenses)
+                    val context = LocalContext.current
+
+                    val progress = if (budget.total > 0) spent.toFloat() / budget.total.toFloat() else 0f
+                    val isCloseToMax = progress >= 0.9f
+                    val isOverBudget = progress >= 1f
+
+                    // Remember notification states so it doesn't spam multiple times
+                    var notified by remember { mutableStateOf(false) }
+
+                    // Show notification if needed
+                    if (!notified && (isCloseToMax || isOverBudget)) {
+                        LaunchedEffect(budget.id) {
+                            notified = true
+                            if (isOverBudget) {
+                                NotificationUtils.showBudgetNotification(
+                                    context,
+                                    "Budget Exceeded!",
+                                    "You’ve exceeded your ${budget.category ?: "overall"} budget limit!"
+                                )
+                            } else {
+                                NotificationUtils.showBudgetNotification(
+                                    context,
+                                    "Budget Nearly Reached",
+                                    "You’re close to your ${budget.category ?: "overall"} budget limit!"
+                                )
+                            }
+                        }
+                    }
+
                     BudgetItem(
                         budget = budget,
                         spent = spent,
