@@ -195,12 +195,6 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                             Log.e("OCR", "Exception inside OCR callback: ${e.message}", e)
                         }
                     }
-
-
-
-
-
-
                 } else {
                     Toast.makeText(context, "Failed to read image", Toast.LENGTH_SHORT).show()
                 }
@@ -231,10 +225,32 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
             val imageFile = uriToFile(context, uri)
             if (imageFile != null) {
                 taggunOcrHelper.sendImageForOcr(imageFile) { jsonResult ->
-                    if (!jsonResult.isNullOrBlank()) {
+                    if (jsonResult.isNotBlank()) {
+                        scannedJson = jsonResult
+                        Log.d("FirestoreUpload", "OCR callback received JSON (length=${jsonResult.length}): $jsonResult")
+
+                        val obj = JSONObject(jsonResult)
+
+                        val ocrText = obj.optString("text", "").trim()
+                        val ocrAmount = obj.optDouble("totalAmount", 0.0)
+                        val ocrDate = obj.optString("date", "").trim()
+
                         (context as? Activity)?.runOnUiThread {
                             saveJsonToDownloads(context, jsonResult)
                             saveJsonToFirestore(context, jsonResult)
+
+                            // Pass OCR text forward to the AddExpense screen
+                            navController.currentBackStackEntry
+                                ?.savedStateHandle
+                                ?.apply {
+                                    set("ocrText", ocrText)
+                                    if (ocrDate.isNotEmpty()) set("ocrDate", ocrDate)   // keep as String, we’ll parse in screen
+                                    if (ocrAmount > 0.0) set("ocrAmount", ocrAmount)        // Double
+                                }
+
+                            // Close sheet, then navigate
+                            showSheet = false
+                            navController.navigate("AddExpense")
                         }
                     } else {
                         Toast.makeText(context, "OCR failed", Toast.LENGTH_SHORT).show()

@@ -447,6 +447,7 @@ private fun mapLabelToEnum(label: String): Category? = when (label.lowercase()) 
 private fun parseOcrDateToLocalDate(raw: String): LocalDate? {
     val patterns = listOf(
         "dd-MM-yyyy", "dd/MM/yyyy", "d/M/yyyy", "d-MM-yyyy",
+        "MM/dd/yyyy", "M/d/yyyy", "MM-dd-yyyy", "M-d-yyyy",  // Added US format patterns
         "yyyy-MM-dd", "yyyy/MM/dd", "yyyy MM dd"
     )
     for (p in patterns) {

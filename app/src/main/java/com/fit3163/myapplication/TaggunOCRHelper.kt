@@ -6,6 +6,9 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 class TaggunOcrHelper {
 
@@ -41,16 +44,45 @@ class TaggunOcrHelper {
             override fun onResponse(call: Call, response: Response) {
                 val responseBody = response.body?.string() ?: "{}"
                 Log.d("OCR", "Raw OCR Response: $responseBody")
-                val cleanedJson = cleanJson(responseBody)
-                Log.d("OCR", "Cleaned OCR JSON: $cleanedJson")
-                onResult(cleanedJson)
+                try {
+                    val json = JSONObject(responseBody)
+
+                    // ✅ Extract structured fields
+                    val totalAmount = json.optJSONObject("totalAmount")?.optDouble("data", 0.0) ?: 0.0
+                    var dateStr = json.optJSONObject("date")?.optString("data", "") ?: ""
+
+                    // ✅ Convert ISO date → MM/dd/yyyy
+                    if (dateStr.isNotEmpty()) {
+                        try {
+                            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+
+                            val outputFormat = SimpleDateFormat("MM/dd/yyyy", Locale.US)
+                            val parsedDate = inputFormat.parse(dateStr)
+                            if (parsedDate != null) {
+                                dateStr = outputFormat.format(parsedDate)
+                            }
+                        } catch (e: Exception) {
+                            Log.w("OCR", "Date parsing failed, keeping raw date: $dateStr")
+                        }
+                    }
+
+                    // ✅ Create cleaned JSON
+                    val cleanedJson = cleanJson(json, totalAmount, dateStr)
+
+                    Log.d("OCR", "Cleaned OCR JSON: $cleanedJson")
+                    onResult(cleanedJson)
+
+                } catch (e: Exception) {
+                    Log.e("OCR", "Failed to parse OCR response: ${e.message}", e)
+                    onResult("{\"error\":\"${e.message}\"}")
+                }
             }
         })
     }
 
-    private fun cleanJson(rawJson: String): String {
+    private fun cleanJson(json: JSONObject, totalAmount: Double, dateStr: String): String {
         return try {
-            val json = JSONObject(rawJson)
             val cleanObject = JSONObject()
 
             // Get receipt full text
@@ -60,45 +92,45 @@ class TaggunOcrHelper {
                 else -> ""
             }
 
-            // --- Extract total amount (flexible) ---
-            var totalAmount = 0.0
-            // Try multiple patterns for total amount
-            val totalPatterns = listOf(
-                "Total\\s*(?:\\(MYR\\))?\\s*[:]?\\s*RM?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Total RM 1,193.4
-                "Amount\\s*[:]?\\s*RM?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Amount: RM59.00 or Amount RM 1,193.4
-                "Total\\s*[:]?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Total: 1,193.4
-                "Amount\\s*([0-9,]+(?:\\.[0-9]{1,2})?)" // Amount 1,193.4
-            )
-            
-            for (pattern in totalPatterns) {
-                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-                val match = regex.find(receiptText.replace("\n", " "))
-                if (match != null) {
-                    totalAmount = match.groupValues[1].replace(",", "").toDouble()
-                    break
-                }
-            }
-
-            // --- Extract date only ---
-            var dateStr = ""
-            // Try multiple date patterns
-            val datePatterns = listOf(
-                "Date\\s*[:]?\\s*(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})", // Date: 28/9/2025
-                "Order Time\\s*[:]?\\s*(\\d{4}[-/]\\d{2}[-/]\\d{2})", // Order Time: 2074-04-30
-                "(\\d{4}[-/]\\d{2}[-/]\\d{2})", // 2074-04-30
-                "(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})", // 28/9/2025
-                "(\\d{2}[-/]\\d{2}[-/]\\d{4})", // 28-04-2025
-                "(\\d{4}\\s\\d{2}\\s\\d{2})" // 2024 04 30
-            )
-            
-            for (pattern in datePatterns) {
-                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-                val match = regex.find(receiptText)
-                if (match != null) {
-                    dateStr = match.groupValues[1]
-                    break
-                }
-            }
+//            // --- Extract total amount (flexible) ---
+//            var totalAmount = 0.0
+//            // Try multiple patterns for total amount
+//            val totalPatterns = listOf(
+//                "Total\\s*(?:\\(MYR\\))?\\s*[:]?\\s*RM?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Total RM 1,193.4
+//                "Amount\\s*[:]?\\s*RM?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Amount: RM59.00 or Amount RM 1,193.4
+//                "Total\\s*[:]?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Total: 1,193.4
+//                "Amount\\s*([0-9,]+(?:\\.[0-9]{1,2})?)" // Amount 1,193.4
+//            )
+//
+//            for (pattern in totalPatterns) {
+//                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
+//                val match = regex.find(receiptText.replace("\n", " "))
+//                if (match != null) {
+//                    totalAmount = match.groupValues[1].replace(",", "").toDouble()
+//                    break
+//                }
+//            }
+//
+//            // --- Extract date only ---
+//            var dateStr = ""
+//            // Try multiple date patterns
+//            val datePatterns = listOf(
+//                "Date\\s*[:]?\\s*(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})", // Date: 28/9/2025
+//                "Order Time\\s*[:]?\\s*(\\d{4}[-/]\\d{2}[-/]\\d{2})", // Order Time: 2074-04-30
+//                "(\\d{4}[-/]\\d{2}[-/]\\d{2})", // 2074-04-30
+//                "(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})", // 28/9/2025
+//                "(\\d{2}[-/]\\d{2}[-/]\\d{4})", // 28-04-2025
+//                "(\\d{4}\\s\\d{2}\\s\\d{2})" // 2024 04 30
+//            )
+//
+//            for (pattern in datePatterns) {
+//                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
+//                val match = regex.find(receiptText)
+//                if (match != null) {
+//                    dateStr = match.groupValues[1]
+//                    break
+//                }
+//            }
 
             // Put into cleaned object
             cleanObject.put("totalAmount", totalAmount)
