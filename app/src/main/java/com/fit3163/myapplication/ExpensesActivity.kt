@@ -137,7 +137,7 @@ fun ExpenseDetailScreen(
     expenseId: String?
 ) {
     val oriExpense = remember(expenseId) { expenseId?.let { expensesViewModel.byId(it) } }
-
+    // Local UI state
     var amount by remember { mutableStateOf(oriExpense?.amount?.toString().orEmpty()) }
     var category by remember { mutableStateOf(oriExpense?.category ?: Category.OTHER) }
     var date by remember { mutableStateOf(oriExpense?.date ?: LocalDate.now()) }
@@ -145,49 +145,37 @@ fun ExpenseDetailScreen(
     var amountError by remember { mutableStateOf(false) }
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    // Prefill from OCR
+    val ocrTextFromPrev = navController.previousBackStackEntry?.savedStateHandle?.get<String>("ocrText").orEmpty().trim()
+    val ocrAmountFromPrev: Double? = navController.previousBackStackEntry?.savedStateHandle?.get<Double>("ocrAmount")
+    val ocrDateFromPrev: String = navController.previousBackStackEntry?.savedStateHandle?.get<String>("ocrDate").orEmpty().trim()
 
-    val ocrTextFromPrev = navController.previousBackStackEntry
-        ?.savedStateHandle
-        ?.get<String>("ocrText")
-        .orEmpty()
-        .trim()
-
-    val ocrAmountFromPrev: Double? = navController.previousBackStackEntry
-        ?.savedStateHandle
-        ?.get<Double>("ocrAmount")
-
-    val ocrDateFromPrev: String = navController.previousBackStackEntry
-        ?.savedStateHandle
-        ?.get<String>("ocrDate")
-        .orEmpty()
-        .trim()
-
-    // 🔌 Categorizer VM (no DI framework needed)
-    val catVm: CategorizerViewModel = viewModel(
-        factory = CategorizerViewModel.Factory(NetworkModule.categorizerApi())
-    )
-    val catState by catVm.ui.collectAsStateWithLifecycle()
-
-    LaunchedEffect(ocrTextFromPrev) {
-        if (ocrTextFromPrev.isNotBlank()) catVm.suggest(ocrTextFromPrev)
+    DisposableEffect(Unit) {
+        onDispose {
+            // Clear OCR keys so they don't leak into the next Add
+            navController.currentBackStackEntry?.savedStateHandle?.apply {
+                remove<String>("ocrText")
+                remove<Double>("ocrAmount")
+                remove<String>("ocrDate")
+            }
+        }
     }
 
+    // Ask cloud model for a category suggestion using OCR text
+    val catVm: CategorizerViewModel = viewModel(factory = CategorizerViewModel.Factory(NetworkModule.categorizerApi()))
+    //val catVm: CategorizerViewModel = viewModel(factory = CategorizerViewModel.Factory(RetrofitClient.apiService))
+    val catState by catVm.ui.collectAsStateWithLifecycle()
+
+    LaunchedEffect(ocrTextFromPrev) { if (ocrTextFromPrev.isNotBlank()) catVm.suggest(ocrTextFromPrev) }
     LaunchedEffect(catState.label) {
-        //val conf = catState.confidence ?: 0.0
         val lbl = catState.label
-//        if (lbl != null && conf >= 0.80) {
-//            mapLabelToEnum(lbl)?.let { category = it }
-//        }
-        if (lbl != null) {
-            mapLabelToEnum(lbl)?.let { category = it }
-        }
+        if (lbl != null) { mapLabelToEnum(lbl)?.let { category = it } }
     }
 
     LaunchedEffect(Unit) {
         if (amount.isBlank() && (ocrAmountFromPrev ?: 0.0) > 0.0) {
             amount = String.format(Locale.getDefault(), "%.2f", ocrAmountFromPrev)
         }
-
         // Prefill date if OCR parsed date is valid
         if (ocrDateFromPrev.isNotBlank()) {
             parseOcrDateToLocalDate(ocrDateFromPrev)?.let { parsed ->
@@ -226,43 +214,44 @@ fun ExpenseDetailScreen(
                                     return@clickable
                                 }
 
-                                val updated = (oriExpense ?: Expense(
-                                    date = date,
-                                    category = category,
-                                    amount = parsed
-                                )).copy(
-                                    amount = parsed,
-                                    category = category,
-                                    date = date,
-                                    notes = notes
-                                )
+                                val updated = (oriExpense ?: Expense(date = date, category = category, amount = parsed))
+                                    .copy(amount = parsed, category = category, date = date, notes = notes)
                                 val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@clickable
                                 val db = FirebaseFirestore.getInstance()
 
-// 🔹 Reference to the current date document
+                                // Reference to the current date document
                                 val dateRef = db.collection("users")
                                     .document(uid)
                                     .collection("dates")
                                     .document(updated.date.toString())
 
-// ✅ Ensure the "date" document exists (creates if missing)
-                                dateRef.set(mapOf("date" to updated.date.toString()), SetOptions.merge())
+                                // Ensure the "date" document exists (creates if missing)
+                                dateRef.set(
+                                    mapOf("date" to updated.date.toString()),
+                                    SetOptions.merge()
+                                )
 
-// 🔹 Reference to the category document under that date
+                                // Reference to the category document under that date
                                 val categoryRef = dateRef
                                     .collection("categories")
                                     .document(updated.category.toString())
 
-// ✅ Ensure the "category" document exists (creates if missing)
-                                categoryRef.set(mapOf("category" to updated.category.toString()), SetOptions.merge())
+                                // Ensure the "category" document exists (creates if missing)
+                                categoryRef.set(
+                                    mapOf("category" to updated.category.toString()),
+                                    SetOptions.merge()
+                                )
 
-// 🔹 Now save the expense inside the category's "expenses" subcollection
+                                // Now save the expense inside the category's "expenses" subcollection
                                 categoryRef
                                     .collection("expenses")
                                     .document(updated.id)
                                     .set(updated.toDto())
                                     .addOnSuccessListener {
-                                        Log.d("Firestore", "✅ Expense saved successfully to Firestore")
+                                        Log.d(
+                                            "Firestore",
+                                            "✅ Expense saved successfully to Firestore"
+                                        )
 
                                         // 👇 Refresh expenses after saving
                                         expensesViewModel.loadExpensesFromFirebase()
@@ -319,7 +308,9 @@ fun ExpenseDetailScreen(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Category") },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -377,8 +368,18 @@ fun ExpenseDetailScreen(
             if (oriExpense != null) {
                 Button(
                     onClick = {
-                        expensesViewModel.delete(oriExpense.id)
-                        navController.popBackStack()
+                        deleteExpenseInFirestore(
+                            expense = oriExpense,
+                            onSuccess = {
+                                // update local state + refresh from cloud
+                                expensesViewModel.delete(oriExpense.id)
+                                expensesViewModel.loadExpensesFromFirebase()
+                                navController.popBackStack()
+                            },
+                            onError = { e ->
+                                Log.e("Firestore", "❌ Error deleting expense", e)
+                            }
+                        )
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     modifier = Modifier.fillMaxWidth()
@@ -456,4 +457,64 @@ private fun parseOcrDateToLocalDate(raw: String): LocalDate? {
         } catch (_: DateTimeParseException) { /* try next */ }
     }
     return null
+}
+
+private fun deleteExpenseInFirestore(
+    expense: Expense,
+    onSuccess: () -> Unit,
+    onError: (Exception) -> Unit
+) {
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+    if (uid == null) {
+        onError(IllegalStateException("User not signed in"))
+        return
+    }
+
+    val db = FirebaseFirestore.getInstance()
+    val dateDoc = db.collection("users")
+        .document(uid)
+        .collection("dates")
+        .document(expense.date.toString())
+
+    val categoryDoc = dateDoc
+        .collection("categories")
+        .document(expense.category.toString())
+
+    val expenseDoc = categoryDoc
+        .collection("expenses")
+        .document(expense.id)
+
+    // 1) Delete the expense document
+    expenseDoc.delete()
+        .addOnSuccessListener {
+            // 2) If no expenses left under this category, delete the category doc
+            categoryDoc.collection("expenses").limit(1).get()
+                .addOnSuccessListener { q1 ->
+                    val maybeDeleteCategory = if (q1.isEmpty) {
+                        categoryDoc.delete()
+                    } else {
+                        // No-op task that succeeds
+                        com.google.android.gms.tasks.Tasks.forResult(null)
+                    }
+
+                    maybeDeleteCategory.addOnSuccessListener {
+                        // 3) If no categories left under this date, delete the date doc
+                        dateDoc.collection("categories").limit(1).get()
+                            .addOnSuccessListener { q2 ->
+                                val maybeDeleteDate = if (q2.isEmpty) {
+                                    dateDoc.delete()
+                                } else {
+                                    com.google.android.gms.tasks.Tasks.forResult(null)
+                                }
+
+                                maybeDeleteDate.addOnSuccessListener {
+                                    onSuccess()
+                                }.addOnFailureListener(onError)
+                            }
+                            .addOnFailureListener(onError)
+                    }.addOnFailureListener(onError)
+                }
+                .addOnFailureListener(onError)
+        }
+        .addOnFailureListener(onError)
 }

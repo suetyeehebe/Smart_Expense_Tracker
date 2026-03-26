@@ -1,6 +1,12 @@
 package com.fit3163.myapplication
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import android.Manifest
+import android.os.Build
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import android.content.SharedPreferences
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fit3163.myapplication.data.budgets.Budget
 import com.fit3163.myapplication.data.expenses.Category
@@ -27,6 +34,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +62,7 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
         budgetsRef.document(uid)
             .collection("budgets")
             .document(budget.id)
-            .set(budget)
+            .set(budgetData)
             .addOnSuccessListener {
                 println("✅ SUCCESS: Budget added to Firebase with ID: ${budget.id}")
                 println("✅ Check Firebase Console - you should see this data now!")
@@ -78,7 +86,7 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
         budgetsRef.document(uid)
             .collection("budgets")
             .document(budget.id)
-            .set(budget)
+            .set(budgetData)
             .addOnSuccessListener {
                 println("✅ SUCCESS: Budget updated in Firebase: ${budget.id}")
             }
@@ -153,25 +161,31 @@ fun BudgetScreen(expensesViewModel: ExpensesViewModel) {
                     val isCloseToMax = progress >= 0.9f
                     val isOverBudget = progress >= 1f
 
-                    // Remember notification states so it doesn't spam multiple times
-                    var notified by remember { mutableStateOf(false) }
-
-                    // Show notification if needed
-                    if (!notified && (isCloseToMax || isOverBudget)) {
-                        LaunchedEffect(budget.id) {
-                            notified = true
-                            if (isOverBudget) {
-                                NotificationUtils.showBudgetNotification(
-                                    context,
-                                    "Budget Exceeded!",
-                                    "You’ve exceeded your ${budget.category ?: "overall"} budget limit!"
-                                )
-                            } else {
-                                NotificationUtils.showBudgetNotification(
-                                    context,
-                                    "Budget Nearly Reached",
-                                    "You’re close to your ${budget.category ?: "overall"} budget limit!"
-                                )
+                    // Check if notification was already sent today for this budget
+                    LaunchedEffect(budget.id, isCloseToMax, isOverBudget) {
+                        if (isCloseToMax || isOverBudget) {
+                            val prefs = context.getSharedPreferences("budget_notifications", 0)
+                            val today = LocalDate.now().toString()
+                            val notificationKey = "${budget.id}_$today"
+                            
+                            if (!prefs.getBoolean(notificationKey, false)) {
+                                // Mark as notified for today
+                                prefs.edit().putBoolean(notificationKey, true).apply()
+                                
+                                // Send notification
+                                if (isOverBudget) {
+                                    NotificationUtils.showBudgetNotification(
+                                        context,
+                                        "Budget Exceeded!",
+                                        "You've exceeded your ${budget.category ?: "overall"} budget limit!"
+                                    )
+                                } else {
+                                    NotificationUtils.showBudgetNotification(
+                                        context,
+                                        "Budget Nearly Reached",
+                                        "You're close to your ${budget.category ?: "overall"} budget limit!"
+                                    )
+                                }
                             }
                         }
                     }

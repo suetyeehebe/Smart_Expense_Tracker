@@ -33,3 +33,16 @@ object NetworkModule {
         return retrofit.create(APIService::class.java)
     }
 }
+
+//object RetrofitClient {
+//
+//    private const val BASE_URL = "https://preponderant-jaida-unlikeably.ngrok-free.dev/"
+//
+//    val apiService: APIService by lazy {
+//        Retrofit.Builder()
+//            .baseUrl(BASE_URL)
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .build()
+//            .create(APIService::class.java)
+//    }
+//}

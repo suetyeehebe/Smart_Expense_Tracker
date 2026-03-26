@@ -11,13 +11,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -28,8 +23,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -43,8 +42,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -68,7 +70,8 @@ fun MyNavHost(
     onSelectedChange: (String) -> Unit
 ) {
     //val navController = rememberNavController()
-    val authViewModel: AuthViewModel = viewModel() // Import androidx.lifecycle.viewmodel.compose.viewModel
+    val authViewModel: AuthViewModel =
+        viewModel() // Import androidx.lifecycle.viewmodel.compose.viewModel
     val expensesViewModel: ExpensesViewModel = viewModel()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -84,7 +87,7 @@ fun MyNavHost(
             LoginScreenFunction(navController, authViewModel)
         }
         composable("signup") {
-            SignupScreenFunction(navController,authViewModel)
+            SignupScreenFunction(navController, authViewModel)
         }
         composable("Settings") {
             //onSelectedChange("Settings")
@@ -104,12 +107,11 @@ fun MyNavHost(
         composable("Analytics") {
             //onSelectedChange("Analytics")
             AnalyticsScreen(
-                navController = navController,
-                expensesVm = expensesViewModel
+                navController = navController, expensesVm = expensesViewModel
             )
         }
 
-        composable("Expenses"){
+        composable("Expenses") {
             //onSelectedChange("Expenses")
             ExpensesScreen(navController, expensesViewModel)
         }
@@ -122,11 +124,11 @@ fun MyNavHost(
             ExpenseDetailScreen(navController, expensesViewModel, id)
         }
 
-        composable("AddExpense"){
+        composable("AddExpense") {
             ExpenseDetailScreen(navController, expensesViewModel, null)
         }
 
-        composable("Budgets"){
+        composable("Budgets") {
             // onSelectedChange("Budgets")
             BudgetScreen(expensesViewModel = expensesViewModel) // added this for reflecting changes
         }
@@ -135,7 +137,12 @@ fun MyNavHost(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BottomNavBar(navController: NavHostController, selected: String) {
+fun BottomNavBar(
+    navController: NavHostController,
+    selected: String,
+    showLoading: Boolean,
+    onLoadingChange: (Boolean) -> Unit
+) {
     var showSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val context = LocalContext.current
@@ -154,6 +161,8 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                 val imageFile = uriToFile(context, uri)
                 if (imageFile != null) {
                     Log.d("OCR", "OCR callback reached, sending to Firestore")
+                    showSheet = false
+                    onLoadingChange(true)
                     taggunOcrHelper.sendImageForOcr(imageFile) { jsonResult ->
                         try {
                             Log.d("OCR", ">>> Entered OCR callback!")
@@ -164,7 +173,10 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                             }
 
                             scannedJson = jsonResult
-                            Log.d("FirestoreUpload", "OCR callback received JSON (length=${jsonResult.length}): $jsonResult")
+                            Log.d(
+                                "FirestoreUpload",
+                                "OCR callback received JSON (length=${jsonResult.length}): $jsonResult"
+                            )
 
                             val obj = JSONObject(jsonResult)
 
@@ -178,24 +190,31 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                                 saveJsonToFirestore(context, jsonResult)
 
                                 // Pass OCR text forward to the AddExpense screen
-                                navController.currentBackStackEntry
-                                    ?.savedStateHandle
-                                    ?.apply {
+                                navController.currentBackStackEntry?.savedStateHandle?.apply {
                                         set("ocrText", ocrText)
-                                        if (ocrDate.isNotEmpty()) set("ocrDate", ocrDate)   // keep as String, we’ll parse in screen
-                                        if (ocrAmount > 0.0) set("ocrAmount", ocrAmount)        // Double
+                                        if (ocrDate.isNotEmpty()) set(
+                                            "ocrDate", ocrDate
+                                        )   // keep as String, we'll parse in screen
+                                        if (ocrAmount > 0.0) set(
+                                            "ocrAmount", ocrAmount
+                                        )        // Double
                                     }
 
-                                // Close sheet, then navigate
+                                // Hide loading screen and navigate
+                                onLoadingChange(false)
                                 showSheet = false
                                 navController.navigate("AddExpense")
                             }
 
                         } catch (e: Exception) {
                             Log.e("OCR", "Exception inside OCR callback: ${e.message}", e)
+                            onLoadingChange(false)
+                            Toast.makeText(context, "OCR processing failed", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     }
                 } else {
+                    onLoadingChange(false)
                     Toast.makeText(context, "Failed to read image", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -217,46 +236,45 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
         }
     }
 
-    // Gallery launcher
+    // System picker for gallery image
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
+            // Convert URI → File for multipart upload to OCR
             val imageFile = uriToFile(context, uri)
             if (imageFile != null) {
+                showSheet = false
+                onLoadingChange(true)
+                // Function CALL to Taggun OCR helper
                 taggunOcrHelper.sendImageForOcr(imageFile) { jsonResult ->
                     if (jsonResult.isNotBlank()) {
                         scannedJson = jsonResult
-                        Log.d("FirestoreUpload", "OCR callback received JSON (length=${jsonResult.length}): $jsonResult")
-
+                        // Parse OCR JSON → structured fields (total, date, text)
                         val obj = JSONObject(jsonResult)
-
                         val ocrText = obj.optString("text", "").trim()
                         val ocrAmount = obj.optDouble("totalAmount", 0.0)
                         val ocrDate = obj.optString("date", "").trim()
-
-                        (context as? Activity)?.runOnUiThread {
-                            saveJsonToDownloads(context, jsonResult)
-                            saveJsonToFirestore(context, jsonResult)
-
-                            // Pass OCR text forward to the AddExpense screen
-                            navController.currentBackStackEntry
-                                ?.savedStateHandle
-                                ?.apply {
-                                    set("ocrText", ocrText)
-                                    if (ocrDate.isNotEmpty()) set("ocrDate", ocrDate)   // keep as String, we’ll parse in screen
-                                    if (ocrAmount > 0.0) set("ocrAmount", ocrAmount)        // Double
-                                }
-
-                            // Close sheet, then navigate
-                            showSheet = false
-                            navController.navigate("AddExpense")
+                        // Pass parsed data to the AddExpense screen using SavedStateHandle
+                        navController.currentBackStackEntry?.savedStateHandle?.apply {
+                            set("ocrText", ocrText)
+                            if (ocrDate.isNotEmpty()) set("ocrDate", ocrDate)   // keep as String, parse in screen
+                            if (ocrAmount > 0.0) set("ocrAmount", ocrAmount)     // Double
                         }
-                    } else {
+                        // Hide loading screen and navigate
+                        onLoadingChange(false)
+                        showSheet = false
+                        // Navigate to AddExpense for user review/edit
+                        navController.navigate("AddExpense")
+                    }
+
+                    else {
+                        onLoadingChange(false)
                         Toast.makeText(context, "OCR failed", Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {
+                onLoadingChange(false)
                 Toast.makeText(context, "Failed to read image", Toast.LENGTH_SHORT).show()
             }
         } else {
@@ -266,71 +284,61 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
 
 
     NavigationBar {
-        NavigationBarItem(
-            selected = selected == "Analytics",
-            onClick = {navController.navigate("Analytics")},
+        NavigationBarItem(selected = selected == "Analytics",
+            onClick = { navController.navigate("Analytics") },
             icon = { Icon(Icons.Default.PieChart, contentDescription = "Analytics") },
-            label = { Text("Analytics") }
-        )
+            label = { Text("Analytics") })
 
-        NavigationBarItem(
-            selected = selected == "Expenses",
-            onClick = {navController.navigate("Expenses")},
+        NavigationBarItem(selected = selected == "Expenses",
+            onClick = { navController.navigate("Expenses") },
             icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "Expenses") },
-            label = { Text("Expenses") }
-        )
+            label = { Text("Expenses") })
 
-        NavigationBarItem(
-            selected = selected == "Add",
-            onClick = {
-                showSheet = true
-            },
-            icon = { Icon(Icons.Default.Add, contentDescription = null) }
-        )
+        NavigationBarItem(selected = selected == "Add", onClick = {
+            showSheet = true
+        }, icon = { Icon(Icons.Default.Add, contentDescription = null) })
 
-        NavigationBarItem(
-            selected = selected == "Budgets",
-            onClick = {navController.navigate("Budgets")},
+        NavigationBarItem(selected = selected == "Budgets",
+            onClick = { navController.navigate("Budgets") },
             icon = { Icon(Icons.Default.AttachMoney, contentDescription = "Budgets") },
-            label = { Text("Budgets") }
-        )
+            label = { Text("Budgets") })
 
-        NavigationBarItem(
-            selected = selected == "Settings",
-            onClick = {navController.navigate("Settings")},
+        NavigationBarItem(selected = selected == "Settings",
+            onClick = { navController.navigate("Settings") },
             icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-            label = { Text("Settings") }
-        )
+            label = { Text("Settings") })
     }
 
-    if(showSheet){
+    if (showSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState,
             modifier = Modifier.height(300.dp)
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Button(
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    onClick = {
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp), onClick = {
                         when {
                             ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.CAMERA
+                                context, Manifest.permission.CAMERA
                             ) == PackageManager.PERMISSION_GRANTED -> {
                                 // Close sheet before launching camera
                                 showSheet = false
                                 cameraLauncher.launch(cameraHelper.getCameraIntent())
                             }
+
                             else -> {
                                 permissionLauncher.launch(Manifest.permission.CAMERA)
                             }
                         }
-                    },
-                    shape = RoundedCornerShape(8.dp)
+                    }, shape = RoundedCornerShape(8.dp)
                 ) {
                     Icon(Icons.Outlined.DocumentScanner, contentDescription = "ScanReceipt")
                     Spacer(Modifier.width(6.dp))
@@ -340,11 +348,11 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                 Spacer(Modifier.height(18.dp))
 
                 Button(
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    onClick = {
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp), onClick = {
                         navController.navigate("AddExpense")
-                    },
-                    shape = RoundedCornerShape(8.dp)
+                    }, shape = RoundedCornerShape(8.dp)
                 ) {
                     Icon(Icons.Outlined.Edit, contentDescription = "ManualInput")
                     Spacer(Modifier.width(6.dp))
@@ -354,14 +362,18 @@ fun BottomNavBar(navController: NavHostController, selected: String) {
                 // For image upload
                 Spacer(Modifier.height(18.dp))
 
+                /**
+                 * Button inside modal bottom sheet — allows user to upload a receipt
+                 * from gallery and triggers the OCR + categorisation pipeline.
+                 */
                 Button(
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    onClick = {
-                        galleryLauncher.launch("image/*")
-                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    onClick = { galleryLauncher.launch("image/*") },
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Icon(Icons.Default.AttachMoney, contentDescription = "UploadReceipt") // You can use another icon if you prefer
+                    Icon(Icons.Default.AttachMoney, contentDescription = "UploadReceipt")
                     Spacer(Modifier.width(6.dp))
                     Text("Upload Receipt")
                 }
@@ -390,20 +402,21 @@ fun uriToFile(context: Context, uri: Uri): File? {
 fun saveJsonToDownloads(context: Context, json: String) {
     try {
         val fileName = "ocr_result_${System.currentTimeMillis()}.txt"
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val downloadsDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val file = File(downloadsDir, fileName)
         FileOutputStream(file).use { it.write(json.toByteArray()) }
-        Toast.makeText(context, "Saved to Downloads: $fileName", Toast.LENGTH_LONG).show()
+        //Toast.makeText(context, "Saved to Downloads: $fileName", Toast.LENGTH_LONG).show()
     } catch (e: Exception) {
         e.printStackTrace()
-        Toast.makeText(context, "Failed to save file", Toast.LENGTH_SHORT).show()
+        //Toast.makeText(context, "Failed to save file", Toast.LENGTH_SHORT).show()
     }
 }
 
 // Save JSON to Firestore (safe version)
 // Save JSON to Firestore (clean version, no timestamp)
 fun saveJsonToFirestore(context: Context, json: String) {
-    Toast.makeText(context, "saveJsonToFirestore called!", Toast.LENGTH_SHORT).show()
+    //Toast.makeText(context, "saveJsonToFirestore called!", Toast.LENGTH_SHORT).show()
     Log.d("FirestoreUpload", "Entered saveJsonToFirestore with JSON length=${json.length}")
     Log.d("FirestoreUpload", "Raw JSON content: $json")
 
@@ -421,36 +434,24 @@ fun saveJsonToFirestore(context: Context, json: String) {
         )
 
         val dataMap = mapOf(
-            "totalAmount" to totalAmount,
-            "date" to date,
-            "text" to text
+            "totalAmount" to totalAmount, "date" to date, "text" to text
         )
 
         Log.d("FirestoreUpload", "Data map to upload: $dataMap")
 
-        db.collection("receipts")
-            .add(dataMap)
-            .addOnSuccessListener { doc ->
+        db.collection("receipts").add(dataMap).addOnSuccessListener { doc ->
                 Log.d("FirestoreUpload", "Upload success! Doc ID: ${doc.id}")
-                Toast.makeText(context, "Uploaded to Firestore!", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener { e ->
+                //Toast.makeText(context, "Uploaded to Firestore!", Toast.LENGTH_SHORT).show()
+            }.addOnFailureListener { e ->
                 Log.e("FirestoreUpload", "Upload failed: ${e.message}", e)
-                Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
+                //Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
 
     } catch (e: Exception) {
         Log.e("FirestoreUpload", "Exception while parsing JSON: $json", e)
-        Toast.makeText(context, "Failed to upload JSON: ${e.message}", Toast.LENGTH_SHORT).show()
+        //Toast.makeText(context, "Failed to upload JSON: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }
-
-
-
-
-
-
-
 
 
 fun Context.findActivity(): Activity {

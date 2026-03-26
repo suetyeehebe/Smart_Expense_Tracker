@@ -4,10 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,15 +35,57 @@ class MainActivity : ComponentActivity() {
             var selectedTheme by rememberSaveable { mutableStateOf(ThemeMode.SYSTEM) }
             val navController: NavHostController = rememberNavController()
             var selected by remember { mutableStateOf("") }
+            var showLoading by remember { mutableStateOf(false) }
             val authViewModel: AuthViewModel = viewModel()
             val bottomNavRoutes = listOf("Analytics", "Expenses", "Budgets", "Settings")
 
             SmartExpenseTrackerTheme(themeMode = selectedTheme) {
-                Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = { if(selected in bottomNavRoutes) {
-                    BottomNavBar(navController, selected)
-                } }) { innerPadding ->
-                    Column( modifier = Modifier.padding(innerPadding) ) {
-                        MyNavHost(selectedTheme, { selectedTheme=it }, navController, {selected = it})
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = { if(selected in bottomNavRoutes) {
+                        BottomNavBar(navController, selected, showLoading, { showLoading = it })
+                    } }) { innerPadding ->
+                        Column( modifier = Modifier.padding(innerPadding) ) {
+                            MyNavHost(selectedTheme, { selectedTheme=it }, navController, {selected = it})
+                        }
+                    }
+                    
+                    // Global loading screen overlay - appears above everything
+                    if (showLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.7f))
+                                .zIndex(999f), // Ensure it appears above everything
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Card(
+                                modifier = Modifier.padding(32.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(48.dp),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = "Processing Receipt...",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Please wait while we extract information from your receipt",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.Gray,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

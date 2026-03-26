@@ -5,6 +5,7 @@
     <!-- Camera permission -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Declare camera as optional (so app installs on devices without camera) -->
     <uses-feature

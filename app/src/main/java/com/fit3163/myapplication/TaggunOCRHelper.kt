@@ -1,5 +1,7 @@
 package com.fit3163.myapplication
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -10,143 +12,120 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 
+/**
+ * Purpose:
+ * Sends a receipt image file to the Taggun OCR API endpoint,
+ * receives the verbose JSON response, and returns a simplified,
+ * cleaned JSON containing only the fields required downstream
+ * (date, totalAmount, and text).
+ */
 class TaggunOcrHelper {
-
     private val client = OkHttpClient()
-
+    /**
+     * Function: sendImageForOcr
+     * Uploads an image file to Taggun OCR and returns cleaned JSON via callback.
+     * @param imageFile The receipt image captured or selected by the user.
+     * @param onResult  Lambda callback that receives the JSON string result.
+     */
     fun sendImageForOcr(imageFile: File, onResult: (String) -> Unit) {
         Log.d("OCR", "sendImageForOcr called with file: ${imageFile.absolutePath}")
 
+        // 1) Build multipart body for image upload
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart(
-                "file",
-                imageFile.name,
-                RequestBody.create("image/jpeg".toMediaTypeOrNull(), imageFile)
-            )
+            .addFormDataPart("file", imageFile.name, RequestBody.create("image/jpeg".toMediaTypeOrNull(), imageFile))
             .build()
 
+        // 2) Build request to Taggun verbose endpoint
         val request = Request.Builder()
             .url("https://api.taggun.io/api/receipt/v1/verbose/file")
             .post(body)
             .addHeader("accept", "application/json")
-            .addHeader("apikey", "2b2d786f3dee496b954e6d6a341d3151") // Replace with your key
+            .addHeader("apikey", "89b1b40028cc11f1866249fa1e600b38") // API key
             .build()
 
         Log.d("OCR", "Sending request to Taggun OCR API...")
 
+        // 3) Execute request asynchronously to avoid blocking UI thread
         client.newCall(request).enqueue(object : Callback {
+            /** Called when request fails */
             override fun onFailure(call: Call, e: IOException) {
                 Log.e("OCR", "OCR request failed: ${e.message}", e)
-                onResult("{\"error\":\"${e.message}\"}")
+                //onResult("{\"error\":\"${e.message}\"}")
+                Handler(Looper.getMainLooper()).post {
+                    onResult("{\"error\":\"${e.message}\"}")
+                }
             }
-
+            /** Called when OCR request succeeds; parse and clean response JSON. */
             override fun onResponse(call: Call, response: Response) {
                 val responseBody = response.body?.string() ?: "{}"
                 Log.d("OCR", "Raw OCR Response: $responseBody")
+
                 try {
                     val json = JSONObject(responseBody)
-
-                    // ✅ Extract structured fields
+                    // Extract structured fields  (total amount, date)
                     val totalAmount = json.optJSONObject("totalAmount")?.optDouble("data", 0.0) ?: 0.0
                     var dateStr = json.optJSONObject("date")?.optString("data", "") ?: ""
 
-                    // ✅ Convert ISO date → MM/dd/yyyy
+                    // Format date from ISO → MM/dd/yyyy for UI readability
                     if (dateStr.isNotEmpty()) {
                         try {
                             val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
                             inputFormat.timeZone = TimeZone.getTimeZone("UTC")
-
                             val outputFormat = SimpleDateFormat("MM/dd/yyyy", Locale.US)
                             val parsedDate = inputFormat.parse(dateStr)
-                            if (parsedDate != null) {
-                                dateStr = outputFormat.format(parsedDate)
-                            }
-                        } catch (e: Exception) {
-                            Log.w("OCR", "Date parsing failed, keeping raw date: $dateStr")
-                        }
+                            if (parsedDate != null) { dateStr = outputFormat.format(parsedDate) }
+                        } catch (e: Exception) { /* Keep raw date if parsing fails */ }
                     }
-
-                    // ✅ Create cleaned JSON
-                    val cleanedJson = cleanJson(json, totalAmount, dateStr)
-
-                    Log.d("OCR", "Cleaned OCR JSON: $cleanedJson")
-                    onResult(cleanedJson)
-
+                    // Extract full receipt text
+                    val text = when (val t = json.opt("text")) {
+                        is JSONObject -> t.optString("text", "")
+                        is String -> t
+                        else -> ""
+                    }
+                    // Build the cleaned JSON we pass downstream
+                    val cleaned = JSONObject()
+                        .put("totalAmount", totalAmount)
+                        .put("date", dateStr)
+                        .put("text", text)
+                        .toString(4)
+                    // Return cleaned JSON to callback
+                    //onResult(cleaned)
+                    Handler(Looper.getMainLooper()).post {
+                        onResult(cleaned)
+                    }
                 } catch (e: Exception) {
                     Log.e("OCR", "Failed to parse OCR response: ${e.message}", e)
-                    onResult("{\"error\":\"${e.message}\"}")
+                    //onResult("{\"error\":\"${e.message}\"}")
+                    Handler(Looper.getMainLooper()).post {
+                        onResult("{\"error\":\"${e.message}\"}")
+                    }
                 }
             }
         })
     }
 
-    private fun cleanJson(json: JSONObject, totalAmount: Double, dateStr: String): String {
-        return try {
-            val cleanObject = JSONObject()
-
-            // Get receipt full text
-            val receiptText = when (val txt = json.opt("text")) {
-                is JSONObject -> txt.optString("text", "")
-                is String -> txt
-                else -> ""
-            }
-
-//            // --- Extract total amount (flexible) ---
-//            var totalAmount = 0.0
-//            // Try multiple patterns for total amount
-//            val totalPatterns = listOf(
-//                "Total\\s*(?:\\(MYR\\))?\\s*[:]?\\s*RM?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Total RM 1,193.4
-//                "Amount\\s*[:]?\\s*RM?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Amount: RM59.00 or Amount RM 1,193.4
-//                "Total\\s*[:]?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", // Total: 1,193.4
-//                "Amount\\s*([0-9,]+(?:\\.[0-9]{1,2})?)" // Amount 1,193.4
-//            )
+//    private fun cleanJson(json: JSONObject, totalAmount: Double, dateStr: String): String {
+//        return try {
+//            val cleanObject = JSONObject()
 //
-//            for (pattern in totalPatterns) {
-//                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-//                val match = regex.find(receiptText.replace("\n", " "))
-//                if (match != null) {
-//                    totalAmount = match.groupValues[1].replace(",", "").toDouble()
-//                    break
-//                }
+//            // Get receipt full text
+//            val receiptText = when (val txt = json.opt("text")) {
+//                is JSONObject -> txt.optString("text", "")
+//                is String -> txt
+//                else -> ""
 //            }
 //
-//            // --- Extract date only ---
-//            var dateStr = ""
-//            // Try multiple date patterns
-//            val datePatterns = listOf(
-//                "Date\\s*[:]?\\s*(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})", // Date: 28/9/2025
-//                "Order Time\\s*[:]?\\s*(\\d{4}[-/]\\d{2}[-/]\\d{2})", // Order Time: 2074-04-30
-//                "(\\d{4}[-/]\\d{2}[-/]\\d{2})", // 2074-04-30
-//                "(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})", // 28/9/2025
-//                "(\\d{2}[-/]\\d{2}[-/]\\d{4})", // 28-04-2025
-//                "(\\d{4}\\s\\d{2}\\s\\d{2})" // 2024 04 30
-//            )
+//            // Put into cleaned object
+//            cleanObject.put("totalAmount", totalAmount)
+//            cleanObject.put("date", dateStr)
+//            cleanObject.put("text", receiptText)
 //
-//            for (pattern in datePatterns) {
-//                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-//                val match = regex.find(receiptText)
-//                if (match != null) {
-//                    dateStr = match.groupValues[1]
-//                    break
-//                }
-//            }
-
-            // Put into cleaned object
-            cleanObject.put("totalAmount", totalAmount)
-            cleanObject.put("date", dateStr)
-            cleanObject.put("text", receiptText)
-
-            // Return pretty-printed JSON
-            cleanObject.toString(4)
-        } catch (e: Exception) {
-            Log.e("OCR", "JSON cleaning failed: ${e.message}", e)
-            "{\"error\":\"Failed to clean JSON: ${e.message}\"}"
-        }
-    }
-
-
-
-
-
+//            // Return pretty-printed JSON
+//            cleanObject.toString(4)
+//        } catch (e: Exception) {
+//            Log.e("OCR", "JSON cleaning failed: ${e.message}", e)
+//            "{\"error\":\"Failed to clean JSON: ${e.message}\"}"
+//        }
+//    }
 }
