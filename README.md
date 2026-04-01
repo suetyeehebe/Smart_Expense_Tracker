@@ -16,61 +16,126 @@ This project aims to solve that problem by:
 
 ---
 
+## 🏗️ System Architecture
+
+    Mobile App
+        ↓
+    OCR Engine (Receipt Parsing)
+        ↓
+    Extracted Text Data 
+        ↓ 
+    Text Preprocessing 
+        ↓ 
+    TF-IDF Vectorizer 
+        ↓ 
+    Linear SVM Model 
+        ↓
+    Predicted Category
+        ↓
+    Mobile App
+
+---
+
+## 📸 Screenshots
+
+### 🔹 Sign In & Sign Up Screen
+
+<p align="left">
+  <img src="screenshots/sign_in.png" width="200"/>
+  <img src="screenshots/sign_up.png" width="200"/>
+</p>
+
+### 🔹 Add Expense Options
+<p align="left">
+  <img src="screenshots/add_options.png" width="200"/>
+</p>
+
+### 🔹 Receipt Scanning (OCR & Category Prediction Result)
+<p align="left">
+  <img src="screenshots/receipt.jpg" width="200"/>
+  <img src="screenshots/scan_result.png" width="200"/>
+</p>
+
+### 🔹 Manual Expense Entry
+<p align="left">
+  <img src="screenshots/manual_input.png" width="200"/>
+</p>
+
+### 🔹 Analytics Dashboard
+<p align="left">
+  <img src="screenshots/analytics_1.png" width="200"/>
+  <img src="screenshots/analytics_2.png" width="200"/>
+</p>
+
+### 🔹 Budget Tracking
+<p align="left">
+  <img src="screenshots/budgets.png" width="200"/>
+</p>
+
+---
+
 ## 🚀 Features
 
 ### ✅ Core Features
-- **Manual Expense Entry**
-- **Receipt Scanning (OCR)**
-- **AI Expense Categorisation**
-- **Analytics Dashboard**
-  - Bar chart: Spending over time
-  - Donut chart: Spending by category
-- **Budget Tracking**
-- **Cloud Storage (Firebase)**
+- 📸 **Receipt Scanning (OCR)**  
+  Extracts key information such as total amount, date, and merchant from receipt images.
+
+- 🤖 **AI Expense Categorisation**  
+  Automatically classifies expenses the following categories:
+  - Food & Drinks  
+  - Entertainment  
+  - Groceries  
+  - Transport  
+  - Home  
+  - Wearables  
+  - Beauty  
+  - Healthcare  
+  - Education
+  - Others
+
+- 📊 **Analytics Dashboard**  
+  Visualises spending patterns using bar charts and pie charts.
+
+- 💰 **Budget Tracking**  
+  Monitor spending against budget limits.
+
+- ✍️ **Manual Expense Entry**  
+  Allows users to input expenses manually when OCR is unavailable.
 
 ---
 
 ## 🧠 AI Categorisation Model
 
-The categorization model is trained using **text data**. It classifies expenses into the following categories:
-
-- Food & Drinks  
-- Entertainment  
-- Groceries  
-- Transport  
-- Home  
-- Wearables  
-- Beauty  
-- Healthcare  
-- Education
-- Others
+- **Input:** OCR-extracted receipt text  
+- **Preprocessing:** Text cleaning and normalization  
+- **Feature Extraction:** TF-IDF (unigrams + bigrams)  
+- **Model:** Linear Support Vector Machine (LinearSVC)  
+- **Handling Imbalance:** Class weights  
+- **Evaluation:** Classification report and confusion matrix
 
 ### Model Pipeline
 
-- Text preprocessing and cleaning  
-- TF-IDF vectorization (1–2 grams)  
-- Logistic Regression classifier  
-- Output probabilities for confidence scoring
-
-### Why this approach?
-- Works well with **short, noisy OCR text**
-- Efficient and fast for **real-time predictions**
-- Provides **confidence scores** for better UX
+<img width="300" height="390" alt="mermaid-diagram" src="https://github.com/user-attachments/assets/0755276d-492b-41ff-988c-96fa5bdf9677" />
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Mobile App
-- **Kotlin (Jetpack Compose)**
-- Android SDK
+### Frontend (Mobile App)
+- Android (Kotlin, Jetpack Compose)
 
 ### Backend
 - **Firebase** (data storage)
-- **Cloud API** (for AI categorisation)
+- **FastAPI** (for AI categorisation)
 
 ### Machine Learning
 - **Python**
 - **Scikit-learn**
   - TF-IDF Vectorizer
-  - Logistic Regression
+  - Linear SVM
+ 
+### Data Processing
+- Pandas
+- NumPy
+
+---
