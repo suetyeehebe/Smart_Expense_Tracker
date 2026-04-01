@@ -76,7 +76,6 @@ This project aims to solve that problem by:
 
 ## 🚀 Features
 
-### ✅ Core Features
 - 📸 **Receipt Scanning (OCR)**  
   Extracts key information such as total amount, date, and merchant from receipt images.
 
